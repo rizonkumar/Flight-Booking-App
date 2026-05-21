@@ -12,61 +12,68 @@ async function createAirport(req, res) {
       address: req.body.address,
       cityId: req.body.cityId,
     });
-    SuccessResponse.data = airport;
-    SuccessResponse.message = MESSAGES.SUCCESS.AIRPORT_CREATED;
-    return res.status(StatusCodes.CREATED).json(SuccessResponse);
+    const response = SuccessResponse();
+    response.data = airport;
+    response.message = MESSAGES.SUCCESS.AIRPORT_CREATED;
+    return res.status(StatusCodes.CREATED).json(response);
   } catch (error) {
-    console.log("Error", error);
-    ErrorResponse.error = error.explanation || error.message;
-    ErrorResponse.message = MESSAGES.ERROR.AIRPORT_CREATE_FAILED;
+    const response = ErrorResponse();
+    response.error = error.explanation || error.message;
+    response.message = MESSAGES.ERROR.AIRPORT_CREATE_FAILED;
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse);
+      .json(response);
   }
 }
 
 async function getAirports(req, res) {
   try {
     const airports = await AirportService.getAirports();
-    SuccessResponse.data = airports;
-    SuccessResponse.message = MESSAGES.SUCCESS.AIRPORT_FETCHED;
-    return res.status(StatusCodes.OK).json(SuccessResponse);
+    const response = SuccessResponse();
+    response.data = airports;
+    response.message = MESSAGES.SUCCESS.AIRPORT_FETCHED;
+    return res.status(StatusCodes.OK).json(response);
   } catch (error) {
-    ErrorResponse.error = error.explanation || error.message;
-    ErrorResponse.message = MESSAGES.ERROR.UNABLE_TO_FETCH_ALL_AIRPORTS;
+    const response = ErrorResponse();
+    response.error = error.explanation || error.message;
+    response.message = MESSAGES.ERROR.UNABLE_TO_FETCH_ALL_AIRPORTS;
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse);
+      .json(response);
   }
 }
 
 async function getAirport(req, res) {
   try {
     const airport = await AirportService.getAirport(req.params.id);
-    SuccessResponse.data = airport;
-    SuccessResponse.message = MESSAGES.SUCCESS.AIRPORT_FETCHED;
-    return res.status(StatusCodes.OK).json(SuccessResponse);
+    const response = SuccessResponse();
+    response.data = airport;
+    response.message = MESSAGES.SUCCESS.AIRPORT_FETCHED;
+    return res.status(StatusCodes.OK).json(response);
   } catch (error) {
-    ErrorResponse.error = error.explanation || error.message;
-    ErrorResponse.message = MESSAGES.ERROR.UNABLE_TO_FETCH_AIRPORT;
+    const response = ErrorResponse();
+    response.error = error.explanation || error.message;
+    response.message = MESSAGES.ERROR.UNABLE_TO_FETCH_AIRPORT;
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse);
+      .json(response);
   }
 }
 
 async function deleteAirport(req, res) {
   try {
     const airport = await AirportService.deleteAirport(req.params.id);
-    SuccessResponse.data = airport;
-    SuccessResponse.message = MESSAGES.SUCCESS.DELETE_AIRPORT_SUCCESS;
-    return res.status(StatusCodes.OK).json(SuccessResponse);
+    const response = SuccessResponse();
+    response.data = airport;
+    response.message = MESSAGES.SUCCESS.DELETE_AIRPORT_SUCCESS;
+    return res.status(StatusCodes.OK).json(response);
   } catch (error) {
-    ErrorResponse.error = error.explanation || error.message;
-    ErrorResponse.message = MESSAGES.ERROR.DELETE_AIRPORT_FAILED;
+    const response = ErrorResponse();
+    response.error = error.explanation || error.message;
+    response.message = MESSAGES.ERROR.DELETE_AIRPORT_FAILED;
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse);
+      .json(response);
   }
 }
 

@@ -106,10 +106,8 @@ async function updateSeats(data) {
       data.seats,
       data.dec
     );
-    console.log("Resonse from updateSeats:  -------->>>>>>>>>", response);
     return response;
   } catch (error) {
-    console.log("Error --------->>>>>>>>>>>>>>>>>>>", error);
     throw new AppError(
       MESSAGES.ERROR.FAILED_TO_UPDATE_SEATS,
       StatusCodes.INTERNAL_SERVER_ERROR

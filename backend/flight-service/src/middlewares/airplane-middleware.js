@@ -5,12 +5,13 @@ const { MESSAGES, CONFIG } = require("../utils/constants");
 
 function validateCreateRequest(req, res, next) {
   if (!req.body.modelNumber) {
-    ErrorResponse.message = MESSAGES.ERROR.INVALID_INPUT;
-    ErrorResponse.error = new AppError(
+    const response = ErrorResponse();
+    response.message = MESSAGES.ERROR.INVALID_INPUT;
+    response.error = new AppError(
       [MESSAGES.ERROR.MODEL_NUMBER_REQUIRED],
       StatusCodes.BAD_REQUEST
     );
-    return res.status(StatusCodes.BAD_REQUEST).json(ErrorResponse);
+    return res.status(StatusCodes.BAD_REQUEST).json(response);
   }
 
   if (req.body.capacity !== undefined) {
@@ -31,20 +32,22 @@ function validateUpdateRequest(req, res, next) {
 function validateCapacity(req, res, next) {
   const capacity = parseInt(req.body.capacity);
   if (isNaN(capacity)) {
-    ErrorResponse.message = MESSAGES.ERROR.INVALID_CAPACITY;
-    ErrorResponse.error = new AppError(
+    const response = ErrorResponse();
+    response.message = MESSAGES.ERROR.INVALID_CAPACITY;
+    response.error = new AppError(
       ["Capacity must be a number"],
       StatusCodes.BAD_REQUEST
     );
-    return res.status(StatusCodes.BAD_REQUEST).json(ErrorResponse);
+    return res.status(StatusCodes.BAD_REQUEST).json(response);
   }
   if (capacity < 0 || capacity > CONFIG.MAX_AIRPLANE_CAPACITY) {
-    ErrorResponse.message = MESSAGES.ERROR.INVALID_CAPACITY;
-    ErrorResponse.error = new AppError(
+    const response = ErrorResponse();
+    response.message = MESSAGES.ERROR.INVALID_CAPACITY;
+    response.error = new AppError(
       [`Capacity must be between 0 and ${CONFIG.MAX_AIRPLANE_CAPACITY}`],
       StatusCodes.BAD_REQUEST
     );
-    return res.status(StatusCodes.BAD_REQUEST).json(ErrorResponse);
+    return res.status(StatusCodes.BAD_REQUEST).json(response);
   }
   next();
 }

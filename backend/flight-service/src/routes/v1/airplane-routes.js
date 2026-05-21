@@ -1,13 +1,13 @@
 const express = require("express");
 
 const { AirplaneController } = require("../../controllers");
-const { AirplaneMiddlewares } = require("../../middlewares");
+const { ValidationMiddleware } = require("../../middlewares");
 
 const router = express.Router();
 
 router.post(
   "/",
-  AirplaneMiddlewares.validateCreateRequest,
+  ValidationMiddleware.validateCreateAirplane,
   AirplaneController.createAirplane
 );
 
@@ -18,7 +18,7 @@ router.delete("/:id", AirplaneController.deleteAirplane);
 
 router.patch(
   "/:id",
-  AirplaneMiddlewares.validateUpdateRequest,
+  ValidationMiddleware.validateUpdateAirplane,
   AirplaneController.updateAirplane
 );
 

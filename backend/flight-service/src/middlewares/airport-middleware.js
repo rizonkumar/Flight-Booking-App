@@ -5,28 +5,31 @@ const { MESSAGES, CONFIG } = require("../utils/constants");
 
 function validateCreateRequest(req, res, next) {
   if (!req.body.name) {
-    ErrorResponse.message = MESSAGES.ERROR.INVALID_INPUT;
-    ErrorResponse.error = new AppError(
+    const response = ErrorResponse();
+    response.message = MESSAGES.ERROR.INVALID_INPUT;
+    response.error = new AppError(
       [MESSAGES.ERROR.NAME_REQUIRED],
       StatusCodes.BAD_REQUEST
     );
-    return res.status(StatusCodes.BAD_REQUEST).json(ErrorResponse);
+    return res.status(StatusCodes.BAD_REQUEST).json(response);
   }
   if (!req.body.code) {
-    ErrorResponse.message = MESSAGES.ERROR.INVALID_INPUT;
-    ErrorResponse.error = new AppError(
+    const response = ErrorResponse();
+    response.message = MESSAGES.ERROR.INVALID_INPUT;
+    response.error = new AppError(
       [MESSAGES.ERROR.CITYID_REQUIRED],
       StatusCodes.BAD_REQUEST
     );
-    return res.status(StatusCodes.BAD_REQUEST).json(ErrorResponse);
+    return res.status(StatusCodes.BAD_REQUEST).json(response);
   }
   if (!req.body.cityId) {
-    ErrorResponse.message = MESSAGES.ERROR.INVALID_INPUT;
-    ErrorResponse.error = new AppError(
+    const response = ErrorResponse();
+    response.message = MESSAGES.ERROR.INVALID_INPUT;
+    response.error = new AppError(
       [MESSAGES.ERROR.AIRPORT_CODE_REQUIRED],
       StatusCodes.BAD_REQUEST
     );
-    return res.status(StatusCodes.BAD_REQUEST).json(ErrorResponse);
+    return res.status(StatusCodes.BAD_REQUEST).json(response);
   }
   next();
 }

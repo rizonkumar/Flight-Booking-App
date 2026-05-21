@@ -17,48 +17,50 @@ async function createFlight(req, res) {
       boardingGate: req.body.boardingGate,
       totalSeats: req.body.totalSeats,
     });
-    SuccessResponse.data = flight;
-    SuccessResponse.message = MESSAGES.SUCCESS.FLIGHT_CREATED;
-    return res.status(StatusCodes.CREATED).json(SuccessResponse);
+    const response = SuccessResponse();
+    response.data = flight;
+    response.message = MESSAGES.SUCCESS.FLIGHT_CREATED;
+    return res.status(StatusCodes.CREATED).json(response);
   } catch (error) {
-    console.log("Error", error);
-    ErrorResponse.error = error.explanation || error.message;
-    ErrorResponse.message = MESSAGES.ERROR.CANNOT_CREATE_FLIGHT;
+    const response = ErrorResponse();
+    response.error = error.explanation || error.message;
+    response.message = MESSAGES.ERROR.CANNOT_CREATE_FLIGHT;
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse);
+      .json(response);
   }
 }
 
 async function getAllFlights(req, res) {
   try {
-    console.log("query", req.query);
-    const response = await FlightService.getAllFlights(req.query);
-    console.log("Response", response);
-    SuccessResponse.data = response;
-    return res.status(StatusCodes.OK).json(SuccessResponse);
+    const flights = await FlightService.getAllFlights(req.query);
+    const response = SuccessResponse();
+    response.data = flights;
+    return res.status(StatusCodes.OK).json(response);
   } catch (error) {
-    console.log("Error", error);
-    ErrorResponse.error = error.explanation || error.message;
-    ErrorResponse.message = MESSAGES.ERROR.UNABLE_TO_FETCH_ALL_FLIGHTS;
+    const response = ErrorResponse();
+    response.error = error.explanation || error.message;
+    response.message = MESSAGES.ERROR.UNABLE_TO_FETCH_ALL_FLIGHTS;
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse);
+      .json(response);
   }
 }
 
 async function getFlight(req, res) {
   try {
     const flight = await FlightService.getFlight(req.params.id);
-    SuccessResponse.data = flight;
-    SuccessResponse.message = MESSAGES.SUCCESS.FLIGHT_FETCHED;
-    return res.status(StatusCodes.OK).json(SuccessResponse);
+    const response = SuccessResponse();
+    response.data = flight;
+    response.message = MESSAGES.SUCCESS.FLIGHT_FETCHED;
+    return res.status(StatusCodes.OK).json(response);
   } catch (error) {
-    ErrorResponse.error = error.explanation || error.message;
-    ErrorResponse.message = MESSAGES.ERROR.UNABLE_TO_FETCH_FLIGHT;
+    const response = ErrorResponse();
+    response.error = error.explanation || error.message;
+    response.message = MESSAGES.ERROR.UNABLE_TO_FETCH_FLIGHT;
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse);
+      .json(response);
   }
 }
 
@@ -69,15 +71,16 @@ async function updateSeats(req, res) {
       seats: req.body.seats,
       dec: req.body.dec,
     });
-    SuccessResponse.data = response;
-    return res.status(StatusCodes.OK).json(SuccessResponse);
+    const successResponse = SuccessResponse();
+    successResponse.data = response;
+    return res.status(StatusCodes.OK).json(successResponse);
   } catch (error) {
-    console.log("Error from controller  -------------->>>>>>>>>>>", error);
-    ErrorResponse.error = error.explanation || error.message;
-    ErrorResponse.message = MESSAGES.ERROR.FAILED_TO_UPDATE_SEATS;
+    const errorResponse = ErrorResponse();
+    errorResponse.error = error.explanation || error.message;
+    errorResponse.message = MESSAGES.ERROR.FAILED_TO_UPDATE_SEATS;
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse);
+      .json(errorResponse);
   }
 }
 
