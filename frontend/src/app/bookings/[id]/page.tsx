@@ -39,7 +39,7 @@ export default function BookingDetailPage() {
   const [paying, setPaying] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  
+
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [paymentError, setPaymentError] = useState("");
   const [cancelSuccess, setCancelSuccess] = useState<CancelBookingResponse | null>(null);
@@ -284,7 +284,7 @@ export default function BookingDetailPage() {
               <h3 className="font-display text-md font-bold text-ink mb-4">
                 Flight Schedule
               </h3>
-              
+
               <div className="rounded-xl border border-border bg-secondary p-5">
                 <div className="flex items-start justify-between">
                   <div>
