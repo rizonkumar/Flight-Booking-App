@@ -1,10 +1,10 @@
-const { MESSAGES } = require("../constants");
+function createErrorResponse() {
+  return {
+    success: false,
+    message: "",
+    data: {},
+    error: {},
+  };
+}
 
-const error = {
-  success: false,
-  message: MESSAGES.ERROR.DEFAULT,
-  data: {},
-  error: {},
-};
-
-module.exports = error;
+module.exports = createErrorResponse;

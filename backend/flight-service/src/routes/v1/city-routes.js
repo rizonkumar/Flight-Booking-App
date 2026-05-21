@@ -1,13 +1,13 @@
 const express = require("express");
 
 const { CityController } = require("../../controllers");
-const { CityMiddlewares } = require("../../middlewares");
+const { ValidationMiddleware } = require("../../middlewares");
 
 const router = express.Router();
 
 router.post(
   "/",
-  CityMiddlewares.validateCreateRequest,
+  ValidationMiddleware.validateCreateCity,
   CityController.createCity
 );
 
@@ -15,7 +15,7 @@ router.get("/", CityController.getCities);
 
 router.patch(
   "/:id",
-  CityMiddlewares.validateUpdateRequest,
+  ValidationMiddleware.validateUpdateCity,
   CityController.updateCity
 );
 

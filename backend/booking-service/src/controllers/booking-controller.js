@@ -10,37 +10,38 @@ async function createBooking(req, res) {
       userId: req.body.userId,
       noofSeats: req.body.noofSeats,
     });
-    SuccessResponse.data = booking;
-    SuccessResponse.message = MESSAGES.SUCCESS.BOOKING_CREATED;
-    return res.status(StatusCodes.CREATED).json(SuccessResponse);
+    const response = SuccessResponse();
+    response.data = booking;
+    response.message = MESSAGES.SUCCESS.BOOKING_CREATED;
+    return res.status(StatusCodes.CREATED).json(response);
   } catch (error) {
-    console.log("Error", error);
-    ErrorResponse.error = error.explanation || error.message;
-    ErrorResponse.message = error.explanation || MESSAGES.ERROR.BOOKING_FAILED;
+    const response = ErrorResponse();
+    response.error = error.explanation || error.message;
+    response.message = error.explanation || MESSAGES.ERROR.BOOKING_FAILED;
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse);
+      .json(response);
   }
 }
 
 async function makePayment(req, res) {
-  console.log("1");
   try {
     const booking = await BookingService.makePayment({
       totalCost: req.body.totalCost,
       userId: req.body.userId,
       bookingId: req.body.bookingId,
     });
-    SuccessResponse.data = booking;
-    SuccessResponse.message = MESSAGES.SUCCESS.BOOKING_CREATED;
-    return res.status(StatusCodes.CREATED).json(SuccessResponse);
+    const response = SuccessResponse();
+    response.data = booking;
+    response.message = MESSAGES.SUCCESS.BOOKING_CREATED;
+    return res.status(StatusCodes.CREATED).json(response);
   } catch (error) {
-    console.log("Error", error);
-    ErrorResponse.error = error.explanation || error.message;
-    ErrorResponse.message = error.explanation || MESSAGES.ERROR.BOOKING_FAILED;
+    const response = ErrorResponse();
+    response.error = error.explanation || error.message;
+    response.message = error.explanation || MESSAGES.ERROR.BOOKING_FAILED;
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse);
+      .json(response);
   }
 }
 module.exports = { createBooking, makePayment };

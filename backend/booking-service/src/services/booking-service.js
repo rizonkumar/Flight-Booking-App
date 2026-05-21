@@ -14,7 +14,7 @@ async function createBooking(data) {
   const transaction = await db.sequelize.transaction();
   try {
     const flight = await axios.get(
-      `${ServerConfig.FLIGHT_SERVICE}/api/v1/flights/${data.flightId}`,
+      `${ServerConfig.FLIGHT_SERVICE}/api/v1/flights/${data.flightId}`
     );
     const flightData = flight.data.data;
 
@@ -22,30 +22,25 @@ async function createBooking(data) {
       throw new AppError(
         MESSAGES.ERROR.NO_OF_SEATS_EXCEEDS_AVAILABLE_SEATS.replace(
           "{{requested}}",
-          flightData.totalSeats,
-        ).replace("{{available}}", flightData.totalSeats),
-        StatusCodes.BAD_REQUEST,
+          flightData.totalSeats
+        ).replace("{{available}}", flightData),
+        StatusCodes.BAD_REQUEST
       );
     }
 
     const totalBookingAmount = data.noofSeats * flightData.price;
-    const bookingPayload = {
-      flightId: data.flightId,
-      userId: data.userId,
-      noOfSeats: data.noofSeats,
-      totalCost: totalBookingAmount,
-    };
+    const bookingPayload = { ...data, totalCost: totalBookingAmount };
 
-    const booking = await bookingRespository.create(
+    const booking = await bookingRespository.createBooking(
       bookingPayload,
-      transaction,
+      transaction
     );
 
     await axios.patch(
       `${ServerConfig.FLIGHT_SERVICE}/api/v1/flights/${data.flightId}/seats`,
       {
         seats: data.noofSeats,
-      },
+      }
     );
 
     await transaction.commit();
@@ -57,7 +52,7 @@ async function createBooking(data) {
     }
     throw new AppError(
       MESSAGES.ERROR.BOOKING_FAILED,
-      StatusCodes.INTERNAL_SERVER_ERROR,
+      StatusCodes.INTERNAL_SERVER_ERROR
     );
   }
 }
@@ -69,17 +64,18 @@ async function makePayment(data) {
     if (bookingDetails.totalCost !== parseInt(data.totalCost)) {
       throw new AppError(
         MESSAGES.ERROR.PAYMENT_FAILED,
-        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
       );
     }
 
     if (bookingDetails.userId !== parseInt(data.userId)) {
       throw new AppError(
         MESSAGES.ERROR.PAYMENT_FAILED_1,
-        StatusCodes.BAD_REQUEST,
+        StatusCodes.BAD_REQUEST
       );
     }
 
+    // we assume here that payment gateway is working fine
     const response = await bookingRespository.update(data.bookingId, {
       status: BOOKED,
     });

@@ -10,60 +10,68 @@ async function createAirplane(req, res) {
       modelNumber: req.body.modelNumber,
       capacity: req.body.capacity,
     });
-    SuccessResponse.data = airplane;
-    SuccessResponse.message = MESSAGES.SUCCESS.AIRPLANE_CREATED;
-    return res.status(StatusCodes.CREATED).json(SuccessResponse);
+    const response = SuccessResponse();
+    response.data = airplane;
+    response.message = MESSAGES.SUCCESS.AIRPLANE_CREATED;
+    return res.status(StatusCodes.CREATED).json(response);
   } catch (error) {
-    ErrorResponse.error = error.explanation || error.message;
-    ErrorResponse.message = MESSAGES.ERROR.AIRPLANE_CREATE_FAILED;
+    const response = ErrorResponse();
+    response.error = error.explanation || error.message;
+    response.message = MESSAGES.ERROR.AIRPLANE_CREATE_FAILED;
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse);
+      .json(response);
   }
 }
 
 async function getAirplanes(req, res) {
   try {
     const airplanes = await AirplaneService.getAirplanes();
-    SuccessResponse.data = airplanes;
-    SuccessResponse.message = MESSAGES.SUCCESS.AIRPLANE_FETCHED;
-    return res.status(StatusCodes.OK).json(SuccessResponse);
+    const response = SuccessResponse();
+    response.data = airplanes;
+    response.message = MESSAGES.SUCCESS.AIRPLANE_FETCHED;
+    return res.status(StatusCodes.OK).json(response);
   } catch (error) {
-    ErrorResponse.error = error.explanation || error.message;
-    ErrorResponse.message = MESSAGES.ERROR.UNABLE_TO_FETCH_ALL_AIRPLANES;
+    const response = ErrorResponse();
+    response.error = error.explanation || error.message;
+    response.message = MESSAGES.ERROR.UNABLE_TO_FETCH_ALL_AIRPLANES;
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse);
+      .json(response);
   }
 }
 
 async function getAirplane(req, res) {
   try {
     const airplanes = await AirplaneService.getAirplane(req.params.id);
-    SuccessResponse.data = airplanes;
-    SuccessResponse.message = MESSAGES.SUCCESS.AIRPLANE_FETCHED;
-    return res.status(StatusCodes.OK).json(SuccessResponse);
+    const response = SuccessResponse();
+    response.data = airplanes;
+    response.message = MESSAGES.SUCCESS.AIRPLANE_FETCHED;
+    return res.status(StatusCodes.OK).json(response);
   } catch (error) {
-    ErrorResponse.error = error.explanation || error.message;
-    ErrorResponse.message = MESSAGES.ERROR.UNABLE_TO_FETCH_AIRPLANE;
+    const response = ErrorResponse();
+    response.error = error.explanation || error.message;
+    response.message = MESSAGES.ERROR.UNABLE_TO_FETCH_AIRPLANE;
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse);
+      .json(response);
   }
 }
 
 async function deleteAirplane(req, res) {
   try {
     const airplane = await AirplaneService.deleteAirplane(req.params.id);
-    SuccessResponse.data = airplane;
-    SuccessResponse.message = MESSAGES.SUCCESS.DELETE_AIRPLANE_SUCCESS;
-    return res.status(StatusCodes.OK).json(SuccessResponse);
+    const response = SuccessResponse();
+    response.data = airplane;
+    response.message = MESSAGES.SUCCESS.DELETE_AIRPLANE_SUCCESS;
+    return res.status(StatusCodes.OK).json(response);
   } catch (error) {
-    ErrorResponse.error = error.explanation || error.message;
-    ErrorResponse.message = MESSAGES.ERROR.DELETE_AIRPLANE_FAILED;
+    const response = ErrorResponse();
+    response.error = error.explanation || error.message;
+    response.message = MESSAGES.ERROR.DELETE_AIRPLANE_FAILED;
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse);
+      .json(response);
   }
 }
 
@@ -73,15 +81,17 @@ async function updateAirplane(req, res) {
       { capacity: req.body.capacity },
       req.params.id
     );
-    SuccessResponse.data = airplane;
-    SuccessResponse.message = MESSAGES.SUCCESS.UPDATE_AIRPLANE_SUCCESS;
-    return res.status(StatusCodes.OK).json(SuccessResponse);
+    const response = SuccessResponse();
+    response.data = airplane;
+    response.message = MESSAGES.SUCCESS.UPDATE_AIRPLANE_SUCCESS;
+    return res.status(StatusCodes.OK).json(response);
   } catch (error) {
-    ErrorResponse.error = error.explanation || error.message;
-    ErrorResponse.message = MESSAGES.ERROR.UPDATE_AIRPLANE_FAILED;
+    const response = ErrorResponse();
+    response.error = error.explanation || error.message;
+    response.message = MESSAGES.ERROR.UPDATE_AIRPLANE_FAILED;
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse);
+      .json(response);
   }
 }
 module.exports = {

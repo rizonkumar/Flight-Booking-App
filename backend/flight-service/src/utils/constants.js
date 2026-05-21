@@ -57,7 +57,7 @@ const MESSAGES = {
     AIRPLANE_ID_REQUIRED: "Please provide airplane ID",
     DEPARTURE_AIRPORT_CODE_REQUIRED: "Please provide departure airport code",
     ARRIVAL_AIRPORT_CODE_REQUIRED: "Please provide arrival airport code",
-    ARRIVAL_TIME_REQUIRED: "Please provide arrival time",
+    ARRIVATE_TIME_REQUIRED: "Please provide arrival time",
     DEPARTURE_TIME_REQUIRED: "Please provide departure time",
     PRICE_REQUIRED: "Please provide ticket price",
     TOTAL_SEATS_REQUIRED: "Please provide total seat count",

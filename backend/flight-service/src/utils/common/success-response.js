@@ -1,10 +1,10 @@
-const { MESSAGES } = require("../constants");
+function createSuccessResponse() {
+  return {
+    success: true,
+    message: "",
+    data: {},
+    error: {},
+  };
+}
 
-const success = {
-  success: true,
-  message: MESSAGES.SUCCESS.DEFAULT,
-  data: {},
-  error: {},
-};
-
-module.exports = success;
+module.exports = createSuccessResponse;

@@ -9,30 +9,34 @@ async function createCity(req, res) {
     const city = await CityService.createCity({
       name: req.body.name,
     });
-    SuccessResponse.data = city;
-    SuccessResponse.message = MESSAGES.SUCCESS.CITY_CREATED;
-    return res.status(StatusCodes.CREATED).json(SuccessResponse);
+    const response = SuccessResponse();
+    response.data = city;
+    response.message = MESSAGES.SUCCESS.CITY_CREATED;
+    return res.status(StatusCodes.CREATED).json(response);
   } catch (error) {
-    ErrorResponse.error = error.explanation || error.message;
-    ErrorResponse.message = MESSAGES.ERROR.CANNOT_CREATE_CITY;
+    const response = ErrorResponse();
+    response.error = error.explanation || error.message;
+    response.message = MESSAGES.ERROR.CANNOT_CREATE_CITY;
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse);
+      .json(response);
   }
 }
 
 async function getCities(req, res) {
   try {
     const cities = await CityService.getCities();
-    SuccessResponse.data = cities;
-    SuccessResponse.message = MESSAGES.SUCCESS.CITIES_FETCHED;
-    return res.status(StatusCodes.OK).json(SuccessResponse);
+    const response = SuccessResponse();
+    response.data = cities;
+    response.message = MESSAGES.SUCCESS.CITIES_FETCHED;
+    return res.status(StatusCodes.OK).json(response);
   } catch (error) {
-    ErrorResponse.error = error.explanation || error.message;
-    ErrorResponse.message = MESSAGES.ERROR.UNABLE_TO_FETCH_ALL_CITIES;
+    const response = ErrorResponse();
+    response.error = error.explanation || error.message;
+    response.message = MESSAGES.ERROR.UNABLE_TO_FETCH_ALL_CITIES;
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse);
+      .json(response);
   }
 }
 
@@ -41,30 +45,34 @@ async function updateCity(req, res) {
     const city = await CityService.updateCity(req.params.id, {
       name: req.body.name,
     });
-    SuccessResponse.data = city;
-    SuccessResponse.message = MESSAGES.SUCCESS.UPDATE_CITY_SUCCESS;
-    return res.status(StatusCodes.OK).json(SuccessResponse);
+    const response = SuccessResponse();
+    response.data = city;
+    response.message = MESSAGES.SUCCESS.UPDATE_CITY_SUCCESS;
+    return res.status(StatusCodes.OK).json(response);
   } catch (error) {
-    ErrorResponse.error = error.explanation || error.message;
-    ErrorResponse.message = MESSAGES.ERROR.UPDATE_CITY_FAILED;
+    const response = ErrorResponse();
+    response.error = error.explanation || error.message;
+    response.message = MESSAGES.ERROR.UPDATE_CITY_FAILED;
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse);
+      .json(response);
   }
 }
 
 async function deleteCity(req, res) {
   try {
     const city = await CityService.deleteCity(req.params.id);
-    SuccessResponse.data = city;
-    SuccessResponse.message = MESSAGES.SUCCESS.DELETE_CITY_SUCCESS;
-    return res.status(StatusCodes.OK).json(SuccessResponse);
+    const response = SuccessResponse();
+    response.data = city;
+    response.message = MESSAGES.SUCCESS.DELETE_CITY_SUCCESS;
+    return res.status(StatusCodes.OK).json(response);
   } catch (error) {
-    ErrorResponse.error = error.explanation || error.message;
-    ErrorResponse.message = MESSAGES.ERROR.DELETE_CITY_FAILED;
+    const response = ErrorResponse();
+    response.error = error.explanation || error.message;
+    response.message = MESSAGES.ERROR.DELETE_CITY_FAILED;
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse);
+      .json(response);
   }
 }
 
