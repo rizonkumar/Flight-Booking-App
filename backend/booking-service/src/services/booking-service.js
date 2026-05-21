@@ -6,7 +6,8 @@ const db = require("../models");
 const AppError = require("../utils/errors/app-error");
 const { MESSAGES, CONFIG } = require("../utils/constants");
 const { Enums } = require("../utils/common");
-const { BOOKED } = Enums.BOOKING_STATUS;
+const { BOOKED, CANCELLED } = Enums.BOOKING_STATUS;
+const { Logger, Queue } = require("../config");
 
 const bookingRespository = new BookingRepository();
 
@@ -61,6 +62,14 @@ async function makePayment(data) {
   const transaction = await db.sequelize.transaction();
   try {
     const bookingDetails = await bookingRespository.get(data.bookingId);
+    
+    if (bookingDetails.status === BOOKED) {
+      throw new AppError("Booking is already completed", StatusCodes.BAD_REQUEST);
+    }
+    if (bookingDetails.status === CANCELLED) {
+      throw new AppError("Booking is already cancelled", StatusCodes.BAD_REQUEST);
+    }
+
     if (bookingDetails.totalCost !== parseInt(data.totalCost)) {
       throw new AppError(
         MESSAGES.ERROR.PAYMENT_FAILED,
@@ -76,15 +85,171 @@ async function makePayment(data) {
     }
 
     // we assume here that payment gateway is working fine
-    const response = await bookingRespository.update(data.bookingId, {
+    await bookingRespository.update(data.bookingId, {
       status: BOOKED,
-    });
+    }, transaction);
 
     await transaction.commit();
+
+    // Async call to fetch details and enqueue booking confirmation email
+    try {
+      const userResponse = await axios.get(
+        `${ServerConfig.AUTH_SERVICE}/api/v1/user/${bookingDetails.userId}`
+      );
+      const user = userResponse.data.data;
+      
+      const flightResponse = await axios.get(
+        `${ServerConfig.FLIGHT_SERVICE}/api/v1/flights/${bookingDetails.flightId}`
+      );
+      const flight = flightResponse.data.data;
+
+      let departureCityName = flight.departureAirportId;
+      let arrivalCityName = flight.arrivalAirportId;
+      try {
+        const depAirportResponse = await axios.get(
+          `${ServerConfig.FLIGHT_SERVICE}/api/v1/airports/${flight.departureAirportId}`
+        );
+        departureCityName = depAirportResponse.data.data.name;
+      } catch (err) {}
+      
+      try {
+        const arrAirportResponse = await axios.get(
+          `${ServerConfig.FLIGHT_SERVICE}/api/v1/airports/${flight.arrivalAirportId}`
+        );
+        arrivalCityName = arrAirportResponse.data.data.name;
+      } catch (err) {}
+
+      const emailPayload = {
+        type: 'BOOKING_CONFIRMATION',
+        data: {
+          passengerEmail: user.email,
+          passengerName: `${user.firstName} ${user.lastName || ''}`.trim(),
+          flightNumber: flight.flightNumber,
+          departureCity: departureCityName,
+          departureAirport: flight.departureAirportId,
+          departureTime: new Date(flight.departureTime).toLocaleString(),
+          arrivalCity: arrivalCityName,
+          arrivalAirport: flight.arrivalAirportId,
+          arrivalTime: new Date(flight.arrivalTime).toLocaleString(),
+          seatNumber: `${Math.floor(Math.random() * 30) + 1}${['A', 'B', 'C', 'D', 'E', 'F'][Math.floor(Math.random() * 6)]}`,
+          flightClass: 'Economy',
+          bookingId: bookingDetails.id,
+          totalPrice: bookingDetails.totalCost,
+        }
+      };
+
+      await Queue.add(emailPayload);
+      Logger.info(`Enqueued confirmation notification for booking ID: ${bookingDetails.id}`);
+    } catch (apiError) {
+      Logger.error(`Could not fetch details or enqueue confirmation notification: ${apiError.message}`);
+    }
+
   } catch (error) {
     await transaction.rollback();
     throw error;
   }
 }
 
-module.exports = { createBooking, makePayment };
+async function cancelBooking(bookingId) {
+  const transaction = await db.sequelize.transaction();
+  try {
+    const booking = await bookingRespository.get(bookingId);
+    if (!booking) {
+      throw new AppError(MESSAGES.ERROR.BOOKING_NOT_FOUND, StatusCodes.NOT_FOUND);
+    }
+    if (booking.status === CANCELLED) {
+      throw new AppError("Booking is already cancelled", StatusCodes.BAD_REQUEST);
+    }
+    
+    const flightResponse = await axios.get(
+      `${ServerConfig.FLIGHT_SERVICE}/api/v1/flights/${booking.flightId}`
+    );
+    const flight = flightResponse.data.data;
+    
+    // Calculate refund amount based on departure time
+    const departureTime = new Date(flight.departureTime);
+    const currentTime = new Date();
+    const diffInHours = (departureTime - currentTime) / (1000 * 60 * 60);
+    
+    let refundPercent = 0;
+    if (diffInHours > 48) {
+      refundPercent = 1.0;
+    } else if (diffInHours >= 24 && diffInHours <= 48) {
+      refundPercent = 0.5;
+    } else {
+      refundPercent = 0.0;
+    }
+    
+    const refundAmount = booking.totalCost * refundPercent;
+    
+    booking.status = CANCELLED;
+    await booking.save({ transaction });
+    
+    await axios.patch(
+      `${ServerConfig.FLIGHT_SERVICE}/api/v1/flights/${booking.flightId}/seats`,
+      {
+        seats: booking.noOfSeats,
+        dec: false,
+      }
+    );
+    
+    await transaction.commit();
+    
+    // Fetch user details to send cancellation email
+    try {
+      const userResponse = await axios.get(
+        `${ServerConfig.AUTH_SERVICE}/api/v1/user/${booking.userId}`
+      );
+      const user = userResponse.data.data;
+      
+      const emailPayload = {
+        type: 'BOOKING_CANCELLATION',
+        data: {
+          passengerEmail: user.email,
+          passengerName: `${user.firstName} ${user.lastName || ''}`.trim(),
+          bookingId: booking.id,
+          refundAmount: refundAmount,
+          flightNumber: flight.flightNumber,
+        }
+      };
+      
+      await Queue.add(emailPayload);
+      Logger.info(`Enqueued cancellation notification for booking ID: ${booking.id}`);
+    } catch (userError) {
+      Logger.error(`Could not send cancellation email for booking ID: ${booking.id}: ${userError.message}`);
+    }
+    
+    return {
+      bookingId: booking.id,
+      status: CANCELLED,
+      totalCost: booking.totalCost,
+      refundPercent: `${refundPercent * 100}%`,
+      refundAmount: refundAmount,
+    };
+  } catch (error) {
+    await transaction.rollback();
+    if (error instanceof AppError) throw error;
+    throw new AppError(
+      error.message || "Failed to cancel booking",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function getBookingDetails(bookingId) {
+  try {
+    const booking = await bookingRespository.get(bookingId);
+    if (!booking) {
+      throw new AppError(MESSAGES.ERROR.BOOKING_NOT_FOUND, StatusCodes.NOT_FOUND);
+    }
+    return booking;
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError(
+      error.message || "Failed to fetch booking",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+module.exports = { createBooking, makePayment, cancelBooking, getBookingDetails };

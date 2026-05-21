@@ -59,6 +59,7 @@ const authProxy = createServiceProxy(ServerConfig.AUTH_SERVICE, {
 authRouter.post('/signup', authLimiter, authProxy);
 authRouter.post('/signin', authLimiter, authProxy);
 authRouter.post('/refresh-token', authLimiter, authProxy);
+authRouter.get('/user/:id', authenticate, authProxy);
 
 router.use('/api/v1/auth', authRouter);
 
@@ -154,8 +155,15 @@ const bookingServiceProxy = createServiceProxy(ServerConfig.BOOKING_SERVICE);
 // POST bookings — any authenticated role, with booking rate limiter
 bookingRouter.post('/', authenticate, bookingLimiter, bookingServiceProxy);
 
-// POST payment — any authenticated role, with booking rate limiter
+// POST payment — any authenticated role, with booking rate limiter (both singular and plural)
 bookingRouter.post('/payment', authenticate, bookingLimiter, bookingServiceProxy);
+bookingRouter.post('/payments', authenticate, bookingLimiter, bookingServiceProxy);
+
+// PATCH cancel booking — any authenticated role
+bookingRouter.patch('/:id/cancel', authenticate, bookingServiceProxy);
+
+// GET download boarding pass / ticket PDF — any authenticated role
+bookingRouter.get('/:id/ticket', authenticate, bookingServiceProxy);
 
 router.use('/api/v1/bookings', bookingRouter);
 

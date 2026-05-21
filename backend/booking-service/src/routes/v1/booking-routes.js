@@ -7,4 +7,8 @@ router.post("/", ValidationMiddleware.validateBooking, BookingController.createB
 
 router.post("/payments", ValidationMiddleware.validatePayment, BookingController.makePayment);
 
+router.patch("/:id/cancel", BookingController.cancelBooking);
+
+router.get("/:id/ticket", BookingController.downloadTicket);
+
 module.exports = router;
