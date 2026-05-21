@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Plane, Search } from "lucide-react";
 import { BookingCard } from "@/components/booking-card";
@@ -37,13 +38,13 @@ export default function BookingsPage() {
             <p className="mt-2 text-sm text-ink/50">
               Search for flights and make your first booking
             </p>
-            <a
+            <Link
               href="/"
               className="mt-5 inline-flex items-center gap-2 rounded-lg bg-forest px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-forest-light"
             >
               <Search className="h-4 w-4" />
               Search Flights
-            </a>
+            </Link>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
