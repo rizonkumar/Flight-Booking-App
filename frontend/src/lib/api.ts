@@ -8,41 +8,47 @@ import type {
   FlightSearchParams,
 } from "./types";
 
-const flightApi = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_FLIGHT_SERVICE_URL || "http://localhost:3000",
+const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:6000",
 });
 
-const bookingApi = axios.create({
-  baseURL:
-    process.env.NEXT_PUBLIC_BOOKING_SERVICE_URL || "http://localhost:3001",
+api.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("skyroute_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
 });
 
-export async function getFlights(
-  params?: FlightSearchParams
-): Promise<Flight[]> {
-  const { data } = await flightApi.get<ApiResponse<Flight[]>>(
-    "/api/v1/flights",
-    { params }
-  );
+export async function signup(payload: any): Promise<any> {
+  const { data } = await api.post<ApiResponse<any>>("/api/v1/auth/signup", payload);
+  return data.data;
+}
+
+export async function signin(payload: any): Promise<any> {
+  const { data } = await api.post<ApiResponse<any>>("/api/v1/auth/signin", payload);
+  return data.data;
+}
+
+export async function getFlights(params?: FlightSearchParams): Promise<Flight[]> {
+  const { data } = await api.get<ApiResponse<Flight[]>>("/api/v1/flights", { params });
   return data.data;
 }
 
 export async function getFlight(id: string): Promise<Flight> {
-  const { data } = await flightApi.get<ApiResponse<Flight>>(
-    `/api/v1/flights/${id}`
-  );
+  const { data } = await api.get<ApiResponse<Flight>>(`/api/v1/flights/${id}`);
   return data.data;
 }
 
 export async function getAirports(): Promise<Airport[]> {
-  const { data } = await flightApi.get<ApiResponse<Airport[]>>(
-    "/api/v1/airports"
-  );
+  const { data } = await api.get<ApiResponse<Airport[]>>("/api/v1/airports");
   return data.data;
 }
 
 export async function getCities(): Promise<City[]> {
-  const { data } = await flightApi.get<ApiResponse<City[]>>("/api/v1/cities");
+  const { data } = await api.get<ApiResponse<City[]>>("/api/v1/cities");
   return data.data;
 }
 
@@ -51,10 +57,7 @@ export async function createBooking(payload: {
   userId: number;
   noofSeats: number;
 }): Promise<Booking> {
-  const { data } = await bookingApi.post<ApiResponse<Booking>>(
-    "/api/v1/bookings",
-    payload
-  );
+  const { data } = await api.post<ApiResponse<Booking>>("/api/v1/bookings", payload);
   return data.data;
 }
 
@@ -63,5 +66,17 @@ export async function makePayment(payload: {
   userId: number;
   totalCost: number;
 }): Promise<void> {
-  await bookingApi.post("/api/v1/bookings/payments", payload);
+  await api.post("/api/v1/bookings/payments", payload);
+}
+
+export async function cancelBooking(id: number): Promise<any> {
+  const { data } = await api.patch<ApiResponse<any>>(`/api/v1/bookings/${id}/cancel`);
+  return data.data;
+}
+
+export async function downloadTicket(id: number): Promise<Blob> {
+  const { data } = await api.get(`/api/v1/bookings/${id}/ticket`, {
+    responseType: "blob",
+  });
+  return data;
 }

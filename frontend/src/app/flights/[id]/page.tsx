@@ -11,6 +11,8 @@ import {
   Minus,
   Plus,
   MapPin,
+  AlertCircle,
+  UserCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getFlight, createBooking } from "@/lib/api";
@@ -26,6 +28,16 @@ export default function FlightDetailPage() {
   const [seats, setSeats] = useState(1);
   const [booking, setBooking] = useState(false);
   const [bookingError, setBookingError] = useState("");
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedUser = localStorage.getItem("skyroute_user");
+      if (storedUser) {
+        setCurrentUser(JSON.parse(storedUser));
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!params.id) return;
@@ -35,18 +47,34 @@ export default function FlightDetailPage() {
       .finally(() => setLoading(false));
   }, [params.id]);
 
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const stored = localStorage.getItem("skyroute_user");
+      setCurrentUser(stored ? JSON.parse(stored) : null);
+    };
+    window.addEventListener("storage", handleStorageChange);
+    const interval = setInterval(handleStorageChange, 1000);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
+
   async function handleBook() {
     if (!flight) return;
+    if (!currentUser) {
+      setBookingError("Please sign in from the top navbar to book this flight.");
+      return;
+    }
     setBooking(true);
     setBookingError("");
     try {
       const result = await createBooking({
         flightId: flight.id,
-        userId: 1,
+        userId: currentUser.id,
         noofSeats: seats,
       });
 
-      // Save to localStorage for the bookings page
       const stored = localStorage.getItem("skyroute_bookings");
       const bookings = stored ? JSON.parse(stored) : [];
       bookings.unshift(result);
@@ -54,7 +82,7 @@ export default function FlightDetailPage() {
 
       router.push(`/bookings/${result.id}`);
     } catch {
-      setBookingError("Booking failed. Please try again.");
+      setBookingError("Booking failed. Make sure all backend services are running.");
     } finally {
       setBooking(false);
     }
@@ -93,7 +121,6 @@ export default function FlightDetailPage() {
   return (
     <div className="bg-secondary min-h-screen">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        {/* Back */}
         <button
           onClick={() => router.back()}
           className="mb-6 flex items-center gap-2 text-sm text-ink/50 transition-colors hover:text-ink"
@@ -103,10 +130,8 @@ export default function FlightDetailPage() {
         </button>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Flight Details */}
           <div className="lg:col-span-2">
             <div className="rounded-2xl border border-border bg-white p-6 sm:p-8">
-              {/* Flight header */}
               <div className="mb-6 flex items-center justify-between">
                 <div>
                   <h1 className="font-display text-2xl font-bold text-ink">
@@ -128,10 +153,8 @@ export default function FlightDetailPage() {
                 </div>
               </div>
 
-              {/* Route visualization */}
               <div className="rounded-xl border border-border bg-secondary p-6">
                 <div className="flex items-start justify-between">
-                  {/* Departure */}
                   <div>
                     <p className="font-display text-3xl font-bold text-ink">
                       {formatTime(departure)}
@@ -145,7 +168,6 @@ export default function FlightDetailPage() {
                     </div>
                   </div>
 
-                  {/* Center line */}
                   <div className="flex flex-1 flex-col items-center px-4 pt-2">
                     <div className="flex items-center gap-1.5 text-sm text-ink/50">
                       <Clock className="h-3.5 w-3.5" />
@@ -161,7 +183,6 @@ export default function FlightDetailPage() {
                     <p className="text-xs text-ink/40">Direct</p>
                   </div>
 
-                  {/* Arrival */}
                   <div className="text-right">
                     <p className="font-display text-3xl font-bold text-ink">
                       {formatTime(arrival)}
@@ -177,7 +198,6 @@ export default function FlightDetailPage() {
                 </div>
               </div>
 
-              {/* Details grid */}
               <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
                 {[
                   { label: "Flight", value: flight.flightNumber },
@@ -202,14 +222,12 @@ export default function FlightDetailPage() {
             </div>
           </div>
 
-          {/* Booking Panel */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 rounded-2xl border border-border bg-white p-6">
               <h2 className="font-display text-lg font-bold text-ink">
                 Book this flight
               </h2>
 
-              {/* Seat selector */}
               <div className="mt-5">
                 <label className="text-xs font-medium uppercase tracking-wider text-ink/50">
                   Number of Seats
@@ -235,7 +253,6 @@ export default function FlightDetailPage() {
                 </div>
               </div>
 
-              {/* Price breakdown */}
               <div className="mt-6 space-y-3 border-t border-border pt-5">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-ink/50">
@@ -257,21 +274,34 @@ export default function FlightDetailPage() {
               </div>
 
               {bookingError && (
-                <p className="mt-3 rounded-lg bg-red-50 p-2.5 text-xs text-red-600">
-                  {bookingError}
-                </p>
+                <div className="mt-4 flex items-start gap-2.5 rounded-lg bg-red-50 p-3 text-xs text-red-600 border border-red-200/50">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-red-500 mt-0.5" />
+                  <span>{bookingError}</span>
+                </div>
               )}
 
-              <Button
-                onClick={handleBook}
-                disabled={booking || flight.totalSeats === 0}
-                className="mt-5 h-12 w-full rounded-lg bg-forest text-sm font-semibold text-white transition-colors hover:bg-forest-light disabled:opacity-50"
-              >
-                {booking ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
-                {booking ? "Booking..." : "Confirm Booking"}
-              </Button>
+              {!currentUser ? (
+                <div className="mt-5 rounded-xl bg-slate-50 border border-border p-4 text-center">
+                  <p className="text-xs text-ink/60 mb-3">
+                    Sign in to secure your reservation and unlock premium tools.
+                  </p>
+                  <div className="inline-flex items-center gap-1.5 text-xs font-bold text-forest uppercase tracking-wider">
+                    <UserCheck className="h-4 w-4" />
+                    Sign In From Top Navigation
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  onClick={handleBook}
+                  disabled={booking || flight.totalSeats === 0}
+                  className="mt-5 h-12 w-full rounded-lg bg-forest text-sm font-semibold text-white transition-colors hover:bg-forest-light disabled:opacity-50"
+                >
+                  {booking ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  {booking ? "Booking..." : "Confirm Booking"}
+                </Button>
+              )}
 
               <p className="mt-3 text-center text-xs text-ink/40">
                 You can pay after booking is confirmed
