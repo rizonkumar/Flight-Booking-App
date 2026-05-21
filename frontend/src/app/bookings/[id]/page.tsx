@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { makePayment, cancelBooking, downloadTicket, getFlight } from "@/lib/api";
-import type { Booking, Flight } from "@/lib/types";
+import type { Booking, Flight, CancelBookingResponse } from "@/lib/types";
 import { formatTime, formatDate } from "@/lib/format";
 
 const statusStyles: Record<string, string> = {
@@ -42,7 +42,7 @@ export default function BookingDetailPage() {
   
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [paymentError, setPaymentError] = useState("");
-  const [cancelSuccess, setCancelSuccess] = useState<any>(null);
+  const [cancelSuccess, setCancelSuccess] = useState<CancelBookingResponse | null>(null);
   const [cancelError, setCancelError] = useState("");
 
   const loadData = useCallback(async () => {

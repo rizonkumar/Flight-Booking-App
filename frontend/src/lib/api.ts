@@ -6,6 +6,10 @@ import type {
   Booking,
   ApiResponse,
   FlightSearchParams,
+  SignupPayload,
+  SigninPayload,
+  AuthResponse,
+  CancelBookingResponse,
 } from "./types";
 
 const api = axios.create({
@@ -22,13 +26,13 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-export async function signup(payload: any): Promise<any> {
-  const { data } = await api.post<ApiResponse<any>>("/api/v1/auth/signup", payload);
+export async function signup(payload: SignupPayload): Promise<AuthResponse> {
+  const { data } = await api.post<ApiResponse<AuthResponse>>("/api/v1/auth/signup", payload);
   return data.data;
 }
 
-export async function signin(payload: any): Promise<any> {
-  const { data } = await api.post<ApiResponse<any>>("/api/v1/auth/signin", payload);
+export async function signin(payload: SigninPayload): Promise<AuthResponse> {
+  const { data } = await api.post<ApiResponse<AuthResponse>>("/api/v1/auth/signin", payload);
   return data.data;
 }
 
@@ -69,8 +73,8 @@ export async function makePayment(payload: {
   await api.post("/api/v1/bookings/payments", payload);
 }
 
-export async function cancelBooking(id: number): Promise<any> {
-  const { data } = await api.patch<ApiResponse<any>>(`/api/v1/bookings/${id}/cancel`);
+export async function cancelBooking(id: number): Promise<CancelBookingResponse> {
+  const { data } = await api.patch<ApiResponse<CancelBookingResponse>>(`/api/v1/bookings/${id}/cancel`);
   return data.data;
 }
 

@@ -53,6 +53,46 @@ export interface Booking {
   updatedAt: string;
 }
 
+export interface User {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName?: string;
+  role: "admin" | "customer";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  tokens: AuthTokens;
+}
+
+export interface SigninPayload {
+  email: string;
+  password: string;
+}
+
+export interface SignupPayload {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName?: string;
+}
+
+export interface CancelBookingResponse {
+  bookingId: number;
+  status: "cancelled";
+  totalCost: number;
+  refundPercent: string;
+  refundAmount: number;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
@@ -67,3 +107,4 @@ export interface FlightSearchParams {
   tripDate?: string;
   sort?: string;
 }
+

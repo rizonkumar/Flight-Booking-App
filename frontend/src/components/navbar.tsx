@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plane, Menu, X, User, LogOut, Loader2, ShieldCheck, Mail, Lock } from "lucide-react";
+import { Plane, Menu, X, User, LogOut, Loader2, Mail, Lock } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { signin, signup } from "@/lib/api";
+import axios from "axios";
+import type { User as UserType } from "@/lib/types";
 
 const navLinks = [
   { href: "/", label: "Search Flights" },
@@ -17,7 +19,7 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserType | null>(null);
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -61,8 +63,13 @@ export function Navbar() {
         setModalOpen(false);
         resetForm();
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.response?.data?.error || "Authentication failed. Please try again.");
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        const resData = err.response?.data as { message?: string; error?: string } | undefined;
+        setError(resData?.message || resData?.error || "Authentication failed. Please try again.");
+      } else {
+        setError("Authentication failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

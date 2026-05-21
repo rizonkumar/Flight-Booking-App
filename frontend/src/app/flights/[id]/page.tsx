@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getFlight, createBooking } from "@/lib/api";
-import type { Flight } from "@/lib/types";
+import type { Flight, User } from "@/lib/types";
 import { formatTime, formatDuration, formatDate } from "@/lib/format";
 
 export default function FlightDetailPage() {
@@ -28,7 +28,7 @@ export default function FlightDetailPage() {
   const [seats, setSeats] = useState(1);
   const [booking, setBooking] = useState(false);
   const [bookingError, setBookingError] = useState("");
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
