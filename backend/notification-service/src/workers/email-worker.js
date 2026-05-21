@@ -3,7 +3,6 @@ const nodemailer = require('nodemailer');
 const { ServerConfig, Logger, getTransporter } = require('../config');
 const { generateTicketPDF } = require('../utils/helpers/ticket-generator');
 
-// Initialize Bull Queue
 const emailQueue = new Queue('email-queue', {
   redis: {
     host: ServerConfig.REDIS_HOST,
@@ -13,7 +12,6 @@ const emailQueue = new Queue('email-queue', {
 
 Logger.info(`Email Worker connected to Redis at ${ServerConfig.REDIS_HOST}:${ServerConfig.REDIS_PORT}`);
 
-// Queue Processor
 emailQueue.process(async (job) => {
   const { type, data } = job.data;
   Logger.info(`Processing job ID ${job.id} for notification type: ${type}`);
@@ -27,7 +25,6 @@ emailQueue.process(async (job) => {
     throw new Error(`Recipient email address not found in job data for job ID ${job.id}`);
   }
 
-  // Retrieve SMTP Transporter
   const transporter = await getTransporter();
   const senderEmail = ServerConfig.GMAIL_SMTP_EMAIL || '"SkyRoute Support" <support@skyroute.com>';
 
@@ -49,7 +46,7 @@ emailQueue.process(async (job) => {
               <h3 style="color: #2b6cb0;">Your Booking is Confirmed!</h3>
               <p>Dear <strong>${data.passengerName || 'Valued Customer'}</strong>,</p>
               <p>Thank you for choosing SkyRoute Airlines. Your flight booking has been successfully confirmed. We have attached your beautiful boarding pass ticket to this email.</p>
-              
+
               <table style="width: 100%; margin-top: 20px; border-collapse: collapse;">
                 <tr style="background-color: #f7fafc;">
                   <th style="padding: 8px; text-align: left; border-bottom: 1px solid #e2e8f0;">Flight</th>
@@ -72,7 +69,7 @@ emailQueue.process(async (job) => {
                   <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">${data.bookingId || 'N/A'}</td>
                 </tr>
               </table>
-              
+
               <p style="margin-top: 20px;">Please read the instructions on the boarding ticket carefully before heading to the airport.</p>
               <p>We look forward to welcoming you on board. Have a safe and pleasant journey!</p>
             </div>
@@ -92,7 +89,7 @@ emailQueue.process(async (job) => {
 
       const info = await transporter.sendMail(mailOptions);
       Logger.info(`Booking Confirmation email sent successfully to ${recipientEmail} for booking ID: ${data.bookingId}`);
-      
+
       const previewUrl = nodemailer.getTestMessageUrl(info);
       if (previewUrl) {
         Logger.info(`[Ethereal Sandbox] View Booking Confirmation Mail: ${previewUrl}`);
@@ -118,13 +115,13 @@ emailQueue.process(async (job) => {
               <h3 style="color: #c53030;">Booking Cancellation Confirmed</h3>
               <p>Dear <strong>${data.passengerName || 'Valued Customer'}</strong>,</p>
               <p>We are writing to confirm that your flight booking <strong>${data.bookingId || 'N/A'}</strong> has been successfully cancelled.</p>
-              
+
               <div style="background-color: #fffaf0; border: 1px solid #feebc8; border-radius: 6px; padding: 15px; margin: 20px 0;">
                 <h4 style="margin: 0 0 10px 0; color: #dd6b20;">Refund Information</h4>
                 <p style="margin: 0 0 5px 0;"><strong>Refund Amount:</strong> ${refundValue}</p>
                 <p style="margin: 0; font-size: 13px; color: #718096;">The amount will be credited back to your original source of payment within 5-7 business days.</p>
               </div>
-              
+
               <p>We deeply regret any inconvenience caused. If you did not make this request or have any other concerns, please contact our support desk immediately.</p>
               <p>We hope to serve you better next time.</p>
             </div>
@@ -137,7 +134,7 @@ emailQueue.process(async (job) => {
 
       const info = await transporter.sendMail(mailOptions);
       Logger.info(`Booking Cancellation email sent successfully to ${recipientEmail} for booking ID: ${data.bookingId}`);
-      
+
       const previewUrl = nodemailer.getTestMessageUrl(info);
       if (previewUrl) {
         Logger.info(`[Ethereal Sandbox] View Booking Cancellation Mail: ${previewUrl}`);
