@@ -113,8 +113,26 @@ async function refreshToken(refreshTokenString) {
     }
 }
 
+async function getUserById(id) {
+    try {
+        const user = await userRepository.get(id);
+        const userResponse = user.toJSON();
+        delete userResponse.password;
+        return userResponse;
+    } catch (error) {
+        if (error instanceof AppError) throw error;
+        Logger.error(`AuthService getUserById error: ${error.message}`);
+        throw new AppError(
+            MESSAGES.ERROR.INTERNAL_SERVER_ERROR,
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            error.message
+        );
+    }
+}
+
 module.exports = {
     signup,
     signin,
     refreshToken,
+    getUserById,
 };

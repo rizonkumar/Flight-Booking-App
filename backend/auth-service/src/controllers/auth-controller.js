@@ -59,8 +59,25 @@ async function refreshToken(req, res) {
     }
 }
 
+async function getUser(req, res) {
+    try {
+        const result = await AuthService.getUserById(req.params.id);
+        const response = SuccessResponse();
+        response.message = MESSAGES.SUCCESS.GET_USER || 'Successfully retrieved user details';
+        response.data = result;
+        return res.status(StatusCodes.OK).json(response);
+    } catch (error) {
+        Logger.error(`AuthController getUser error: ${error.message}`);
+        const response = ErrorResponse();
+        response.message = error.message || MESSAGES.ERROR.INTERNAL_SERVER_ERROR;
+        response.error = { explanation: error.explanation || error.message };
+        return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json(response);
+    }
+}
+
 module.exports = {
     signup,
     signin,
     refreshToken,
+    getUser,
 };
