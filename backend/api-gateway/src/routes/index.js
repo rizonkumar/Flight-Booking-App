@@ -52,9 +52,7 @@ const createServiceProxy = (target, pathRewrite) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const authRouter = express.Router();
 
-const authProxy = createServiceProxy(ServerConfig.AUTH_SERVICE, {
-    '^/api/v1/auth': '/api/v1',
-});
+const authProxy = createServiceProxy(ServerConfig.AUTH_SERVICE, (path) => `/api/v1/auth${path}`);
 
 authRouter.post('/signup', authLimiter, authProxy);
 authRouter.post('/signin', authLimiter, authProxy);
@@ -68,7 +66,7 @@ router.use('/api/v1/auth', authRouter);
 // ─────────────────────────────────────────────────────────────────────────────
 const flightRouter = express.Router();
 
-const flightServiceProxy = createServiceProxy(ServerConfig.FLIGHT_SERVICE);
+const flightServiceProxy = createServiceProxy(ServerConfig.FLIGHT_SERVICE, (path) => `/api/v1/flights${path}`);
 
 // GET routes — any authenticated role
 flightRouter.get('/', authenticate, flightServiceProxy);
@@ -87,7 +85,7 @@ router.use('/api/v1/flights', flightRouter);
 // ─────────────────────────────────────────────────────────────────────────────
 const airplaneRouter = express.Router();
 
-const airplaneServiceProxy = createServiceProxy(ServerConfig.FLIGHT_SERVICE);
+const airplaneServiceProxy = createServiceProxy(ServerConfig.FLIGHT_SERVICE, (path) => `/api/v1/airplanes${path}`);
 
 // GET routes — any authenticated role
 airplaneRouter.get('/', authenticate, airplaneServiceProxy);
@@ -109,7 +107,7 @@ router.use('/api/v1/airplanes', airplaneRouter);
 // ─────────────────────────────────────────────────────────────────────────────
 const airportRouter = express.Router();
 
-const airportServiceProxy = createServiceProxy(ServerConfig.FLIGHT_SERVICE);
+const airportServiceProxy = createServiceProxy(ServerConfig.FLIGHT_SERVICE, (path) => `/api/v1/airports${path}`);
 
 // GET routes — any authenticated role
 airportRouter.get('/', authenticate, airportServiceProxy);
@@ -128,7 +126,7 @@ router.use('/api/v1/airports', airportRouter);
 // ─────────────────────────────────────────────────────────────────────────────
 const cityRouter = express.Router();
 
-const cityServiceProxy = createServiceProxy(ServerConfig.FLIGHT_SERVICE);
+const cityServiceProxy = createServiceProxy(ServerConfig.FLIGHT_SERVICE, (path) => `/api/v1/cities${path}`);
 
 // GET routes — any authenticated role
 cityRouter.get('/', authenticate, cityServiceProxy);
@@ -150,7 +148,7 @@ router.use('/api/v1/cities', cityRouter);
 // ─────────────────────────────────────────────────────────────────────────────
 const bookingRouter = express.Router();
 
-const bookingServiceProxy = createServiceProxy(ServerConfig.BOOKING_SERVICE);
+const bookingServiceProxy = createServiceProxy(ServerConfig.BOOKING_SERVICE, (path) => `/api/v1/bookings${path}`);
 
 // POST bookings — any authenticated role, with booking rate limiter
 bookingRouter.post('/', authenticate, bookingLimiter, bookingServiceProxy);

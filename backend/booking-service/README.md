@@ -38,7 +38,7 @@ A microservice for handling flight bookings built with Node.js, Express, and MyS
    ```bash
    npx sequelize-cli db:create
    ```
-   
+
 
 2. Run migrations:
 
