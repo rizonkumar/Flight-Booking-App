@@ -150,12 +150,18 @@ const bookingRouter = express.Router();
 
 const bookingServiceProxy = createServiceProxy(ServerConfig.BOOKING_SERVICE, (path) => `/api/v1/bookings${path}`);
 
+// GET bookings — ADMIN only
+bookingRouter.get('/', authenticate, authorize(ROLES.ADMIN), bookingServiceProxy);
+
 // POST bookings — any authenticated role, with booking rate limiter
 bookingRouter.post('/', authenticate, bookingLimiter, bookingServiceProxy);
 
 // POST payment — any authenticated role, with booking rate limiter (both singular and plural)
 bookingRouter.post('/payment', authenticate, bookingLimiter, bookingServiceProxy);
 bookingRouter.post('/payments', authenticate, bookingLimiter, bookingServiceProxy);
+
+// PATCH confirm booking — ADMIN only
+bookingRouter.patch('/:id/confirm', authenticate, authorize(ROLES.ADMIN), bookingServiceProxy);
 
 // PATCH cancel booking — any authenticated role
 bookingRouter.patch('/:id/cancel', authenticate, bookingServiceProxy);

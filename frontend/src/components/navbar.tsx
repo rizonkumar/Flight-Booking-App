@@ -25,8 +25,12 @@ export function Navbar() {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const activeLinks = [
+    ...navLinks,
+    ...(user?.role === "admin" ? [{ href: "/admin/bookings", label: "Admin Portal" }] : []),
+  ];
 
   useEffect(() => {
     const storedUser = localStorage.getItem("skyroute_user");
@@ -97,7 +101,7 @@ export function Navbar() {
           </Link>
 
           <nav className="hidden items-center gap-2 md:flex">
-            {navLinks.map((link) => (
+            {activeLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -155,7 +159,7 @@ export function Navbar() {
 
         {mobileOpen && (
           <div className="border-t border-border/60 bg-white px-4 py-3 md:hidden space-y-1">
-            {navLinks.map((link) => (
+            {activeLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}

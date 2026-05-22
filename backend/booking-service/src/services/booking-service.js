@@ -150,7 +150,7 @@ async function makePayment(data) {
   }
 }
 
-async function cancelBooking(bookingId) {
+async function cancelBooking(bookingId, forceFullRefund = false) {
   const transaction = await db.sequelize.transaction();
   try {
     const booking = await bookingRespository.get(bookingId);
@@ -172,7 +172,9 @@ async function cancelBooking(bookingId) {
     const diffInHours = (departureTime - currentTime) / (1000 * 60 * 60);
     
     let refundPercent = 0;
-    if (diffInHours > 48) {
+    if (forceFullRefund) {
+      refundPercent = 1.0;
+    } else if (diffInHours > 48) {
       refundPercent = 1.0;
     } else if (diffInHours >= 24 && diffInHours <= 48) {
       refundPercent = 0.5;
@@ -242,14 +244,165 @@ async function getBookingDetails(bookingId) {
     if (!booking) {
       throw new AppError(MESSAGES.ERROR.BOOKING_NOT_FOUND, StatusCodes.NOT_FOUND);
     }
-    return booking;
+    const bookingData = booking.toJSON ? booking.toJSON() : booking;
+    
+    let flight = null;
+    try {
+      const flightResponse = await axios.get(
+        `${ServerConfig.FLIGHT_SERVICE}/api/v1/flights/${booking.flightId}`
+      );
+      flight = flightResponse.data.data;
+    } catch (err) {
+      Logger.error(`Failed to fetch flight details for booking ${booking.id}: ${err.message}`);
+    }
+    
+    let user = null;
+    try {
+      const userResponse = await axios.get(
+        `${ServerConfig.AUTH_SERVICE}/api/v1/user/${booking.userId}`
+      );
+      user = userResponse.data.data;
+    } catch (err) {
+      Logger.error(`Failed to fetch user details for booking ${booking.id}: ${err.message}`);
+    }
+    
+    return {
+      ...bookingData,
+      flight,
+      user,
+    };
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw new AppError(
-      error.message || "Failed to fetch booking",
-      StatusCodes.INTERNAL_SERVER_ERROR
+      error.message || "Failed to fetch booking details",
+      error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR
     );
   }
 }
 
-module.exports = { createBooking, makePayment, cancelBooking, getBookingDetails };
+async function getAllBookings() {
+  try {
+    const bookings = await bookingRespository.getAll();
+    const enrichedBookings = await Promise.all(
+      bookings.map(async (booking) => {
+        const bookingData = booking.toJSON ? booking.toJSON() : booking;
+        
+        let flight = null;
+        try {
+          const flightResponse = await axios.get(
+            `${ServerConfig.FLIGHT_SERVICE}/api/v1/flights/${booking.flightId}`
+          );
+          flight = flightResponse.data.data;
+        } catch (err) {
+          Logger.error(`Failed to fetch flight details for booking ${booking.id}: ${err.message}`);
+        }
+        
+        let user = null;
+        try {
+          const userResponse = await axios.get(
+            `${ServerConfig.AUTH_SERVICE}/api/v1/user/${booking.userId}`
+          );
+          user = userResponse.data.data;
+        } catch (err) {
+          Logger.error(`Failed to fetch user details for booking ${booking.id}: ${err.message}`);
+        }
+        
+        return {
+          ...bookingData,
+          flight,
+          user,
+        };
+      })
+    );
+    return enrichedBookings;
+  } catch (error) {
+    throw new AppError(
+      error.message || "Failed to fetch bookings list",
+      error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function confirmBooking(bookingId) {
+  const transaction = await db.sequelize.transaction();
+  try {
+    const booking = await bookingRespository.get(bookingId);
+    if (!booking) {
+      throw new AppError(MESSAGES.ERROR.BOOKING_NOT_FOUND, StatusCodes.NOT_FOUND);
+    }
+    if (booking.status === BOOKED) {
+      throw new AppError("Booking is already confirmed", StatusCodes.BAD_REQUEST);
+    }
+    if (booking.status === CANCELLED) {
+      throw new AppError("Booking is already cancelled", StatusCodes.BAD_REQUEST);
+    }
+    
+    booking.status = BOOKED;
+    await booking.save({ transaction });
+    await transaction.commit();
+    
+    // Async call to fetch details and enqueue booking confirmation email
+    try {
+      const userResponse = await axios.get(
+        `${ServerConfig.AUTH_SERVICE}/api/v1/user/${booking.userId}`
+      );
+      const user = userResponse.data.data;
+      
+      const flightResponse = await axios.get(
+        `${ServerConfig.FLIGHT_SERVICE}/api/v1/flights/${booking.flightId}`
+      );
+      const flight = flightResponse.data.data;
+      
+      let departureCityName = flight.departureAirportId;
+      let arrivalCityName = flight.arrivalAirportId;
+      try {
+        const depAirportResponse = await axios.get(
+          `${ServerConfig.FLIGHT_SERVICE}/api/v1/airports/${flight.departureAirportId}`
+        );
+        departureCityName = depAirportResponse.data.data.name;
+      } catch (err) {}
+      
+      try {
+        const arrAirportResponse = await axios.get(
+          `${ServerConfig.FLIGHT_SERVICE}/api/v1/airports/${flight.arrivalAirportId}`
+        );
+        arrivalCityName = arrAirportResponse.data.data.name;
+      } catch (err) {}
+      
+      const emailPayload = {
+        type: 'BOOKING_CONFIRMATION',
+        data: {
+          passengerEmail: user.email,
+          passengerName: `${user.firstName} ${user.lastName || ''}`.trim(),
+          flightNumber: flight.flightNumber,
+          departureCity: departureCityName,
+          departureAirport: flight.departureAirportId,
+          departureTime: new Date(flight.departureTime).toLocaleString(),
+          arrivalCity: arrivalCityName,
+          arrivalAirport: flight.arrivalAirportId,
+          arrivalTime: new Date(flight.arrivalTime).toLocaleString(),
+          seatNumber: `${Math.floor(Math.random() * 30) + 1}${['A', 'B', 'C', 'D', 'E', 'F'][Math.floor(Math.random() * 6)]}`,
+          flightClass: 'Economy',
+          bookingId: booking.id,
+          totalPrice: booking.totalCost,
+        }
+      };
+      
+      await Queue.add(emailPayload);
+      Logger.info(`Enqueued confirmation notification for booking ID: ${booking.id}`);
+    } catch (apiError) {
+      Logger.error(`Could not fetch details or enqueue confirmation notification: ${apiError.message}`);
+    }
+    
+    return booking;
+  } catch (error) {
+    await transaction.rollback();
+    if (error instanceof AppError) throw error;
+    throw new AppError(
+      error.message || "Failed to confirm booking",
+      error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+module.exports = { createBooking, makePayment, cancelBooking, getBookingDetails, getAllBookings, confirmBooking };

@@ -7,6 +7,10 @@ router.post("/", ValidationMiddleware.validateBooking, BookingController.createB
 
 router.post("/payments", ValidationMiddleware.validatePayment, BookingController.makePayment);
 
+router.get("/", BookingController.getAllBookings);
+
+router.patch("/:id/confirm", BookingController.confirmBooking);
+
 router.patch("/:id/cancel", BookingController.cancelBooking);
 
 router.get("/:id/ticket", BookingController.downloadTicket);

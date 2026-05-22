@@ -51,6 +51,8 @@ export interface Booking {
   totalCost: number;
   createdAt: string;
   updatedAt: string;
+  flight?: Flight;
+  user?: User;
 }
 
 export interface User {
