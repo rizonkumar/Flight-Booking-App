@@ -45,26 +45,8 @@ import { Separator } from "@/components/ui/separator";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
+  const [authorized, setAuthorized] = useState(false);
   
-  // Navigation role check
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const userStr = localStorage.getItem("skyroute_user");
-      if (userStr) {
-        try {
-          const user = JSON.parse(userStr);
-          if (user.role !== "admin") {
-            router.push("/");
-          }
-        } catch (e) {
-          router.push("/");
-        }
-      } else {
-        router.push("/");
-      }
-    }
-  }, [router]);
-
   // Tab State
   const [activeTab, setActiveTab] = useState<"bookings" | "flights" | "airplanes-airports" | "cities">("bookings");
   
@@ -138,9 +120,26 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Check authorization and fetch data only if authorized
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (typeof window !== "undefined") {
+      const userStr = localStorage.getItem("skyroute_user");
+      const token = localStorage.getItem("skyroute_token");
+      if (userStr && token) {
+        try {
+          const user = JSON.parse(userStr);
+          if (user.role === "admin") {
+            setAuthorized(true);
+            fetchData();
+            return;
+          }
+        } catch (e) {
+          // ignore, will redirect
+        }
+      }
+      router.push("/");
+    }
+  }, [router]);
 
   // Update total seats automatically when airplane is selected
   useEffect(() => {
@@ -333,6 +332,14 @@ export default function AdminDashboardPage() {
       minute: "2-digit"
     });
   };
+
+  if (!authorized) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <RefreshCw className="h-8 w-8 text-forest animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -652,12 +659,14 @@ export default function AdminDashboardPage() {
                 <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-border shadow-sm">
                   <span className="text-sm font-semibold text-ink/70">Scheduled Flight Log ({flights.length} active routes)</span>
                   <Dialog open={isFlightModalOpen} onOpenChange={setIsFlightModalOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="bg-forest hover:bg-forest-light text-white font-semibold text-sm shadow-sm flex items-center gap-2">
-                        <Plus className="h-4 w-4" />
-                        Create Flight
-                      </Button>
-                    </DialogTrigger>
+                    <DialogTrigger
+                      render={
+                        <Button className="bg-forest hover:bg-forest-light text-white font-semibold text-sm shadow-sm flex items-center gap-2">
+                          <Plus className="h-4 w-4" />
+                          Create Flight
+                        </Button>
+                      }
+                    />
                     <DialogContent className="sm:max-w-[500px] border border-border bg-white rounded-2xl">
                       <form onSubmit={handleCreateFlight}>
                         <DialogHeader>
@@ -852,12 +861,14 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <Dialog open={isAirplaneModalOpen} onOpenChange={setIsAirplaneModalOpen}>
-                      <DialogTrigger asChild>
-                        <Button size="sm" className="bg-forest hover:bg-forest-light text-white font-semibold text-xs shadow-sm flex items-center gap-1">
-                          <Plus className="h-3.5 w-3.5" />
-                          Add Fleet
-                        </Button>
-                      </DialogTrigger>
+                      <DialogTrigger
+                        render={
+                          <Button size="sm" className="bg-forest hover:bg-forest-light text-white font-semibold text-xs shadow-sm flex items-center gap-1">
+                            <Plus className="h-3.5 w-3.5" />
+                            Add Fleet
+                          </Button>
+                        }
+                      />
                       <DialogContent className="sm:max-w-[400px] border border-border bg-white rounded-2xl">
                         <form onSubmit={handleCreateAirplane}>
                           <DialogHeader>
@@ -927,12 +938,14 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <Dialog open={isAirportModalOpen} onOpenChange={setIsAirportModalOpen}>
-                      <DialogTrigger asChild>
-                        <Button size="sm" className="bg-forest hover:bg-forest-light text-white font-semibold text-xs shadow-sm flex items-center gap-1">
-                          <Plus className="h-3.5 w-3.5" />
-                          Add Hub
-                        </Button>
-                      </DialogTrigger>
+                      <DialogTrigger
+                        render={
+                          <Button size="sm" className="bg-forest hover:bg-forest-light text-white font-semibold text-xs shadow-sm flex items-center gap-1">
+                            <Plus className="h-3.5 w-3.5" />
+                            Add Hub
+                          </Button>
+                        }
+                      />
                       <DialogContent className="sm:max-w-[400px] border border-border bg-white rounded-2xl">
                         <form onSubmit={handleCreateAirport}>
                           <DialogHeader>
@@ -1032,12 +1045,14 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <Dialog open={isCityModalOpen} onOpenChange={setIsCityModalOpen}>
-                    <DialogTrigger asChild>
-                      <Button size="sm" className="bg-forest hover:bg-forest-light text-white font-semibold text-xs shadow-sm flex items-center gap-1">
-                        <Plus className="h-3.5 w-3.5" />
-                        Add City
-                      </Button>
-                    </DialogTrigger>
+                    <DialogTrigger
+                      render={
+                        <Button size="sm" className="bg-forest hover:bg-forest-light text-white font-semibold text-xs shadow-sm flex items-center gap-1">
+                          <Plus className="h-3.5 w-3.5" />
+                          Add City
+                        </Button>
+                      }
+                    />
                     <DialogContent className="sm:max-w-[400px] border border-border bg-white rounded-2xl">
                       <form onSubmit={handleCreateCity}>
                         <DialogHeader>

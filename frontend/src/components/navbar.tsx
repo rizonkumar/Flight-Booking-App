@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Plane, Menu, X, User, LogOut, Loader2, Mail, Lock } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -16,10 +16,12 @@ const navLinks = [
 
 export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [user, setUser] = useState<UserType | null>(null);
+  const [loading, setLoading] = useState(false);
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,8 +44,10 @@ export function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem("skyroute_token");
     localStorage.removeItem("skyroute_user");
+    localStorage.removeItem("skyroute_bookings");
     setUser(null);
     setMobileOpen(false);
+    router.push("/");
   };
 
   const handleAuth = async (e: React.FormEvent) => {

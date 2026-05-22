@@ -1,26 +1,37 @@
+"use client";
+
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Plane, Search } from "lucide-react";
+import Link from "next/link";
 import { BookingCard } from "@/components/booking-card";
 import type { Booking } from "@/lib/types";
 
 export default function BookingsPage() {
   const router = useRouter();
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("skyroute_token");
-      if (!token) {
-        router.push("/");
-        return;
-      }
-      const stored = localStorage.getItem("skyroute_bookings");
-      if (stored) {
-        setBookings(JSON.parse(stored));
-      }
+    const token = localStorage.getItem("skyroute_token");
+    if (!token) {
+      router.push("/");
+      return;
     }
+    const stored = localStorage.getItem("skyroute_bookings");
+    if (stored) {
+      setBookings(JSON.parse(stored));
+    }
+    setLoading(false);
   }, [router]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Plane className="h-8 w-8 animate-spin text-forest" />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-secondary min-h-screen">

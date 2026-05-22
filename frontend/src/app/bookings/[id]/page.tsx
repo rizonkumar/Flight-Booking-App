@@ -47,6 +47,11 @@ export default function BookingDetailPage() {
 
   const loadData = useCallback(async () => {
     try {
+      const token = localStorage.getItem("skyroute_token");
+      if (!token) {
+        router.push("/");
+        return;
+      }
       const stored = localStorage.getItem("skyroute_bookings");
       if (stored) {
         const bookings: Booking[] = JSON.parse(stored);
@@ -62,7 +67,7 @@ export default function BookingDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [params.id]);
+  }, [params.id, router]);
 
   useEffect(() => {
     loadData();

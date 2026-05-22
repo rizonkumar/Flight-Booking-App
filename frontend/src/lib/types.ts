@@ -108,5 +108,6 @@ export interface FlightSearchParams {
   travellers?: string;
   tripDate?: string;
   sort?: string;
+  country?: string;
 }
 

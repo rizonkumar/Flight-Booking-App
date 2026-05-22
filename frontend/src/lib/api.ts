@@ -10,6 +10,7 @@ import type {
   SigninPayload,
   AuthResponse,
   CancelBookingResponse,
+  Airplane,
 } from "./types";
 
 const api = axios.create({
