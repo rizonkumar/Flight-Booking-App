@@ -1,0 +1,17 @@
+{
+  "name": "flight-booking-backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k -n auth,flight,booking,gateway,notification -c blue,green,yellow,magenta,cyan \"npm --prefix auth-service run dev\" \"npm --prefix flight-service run dev\" \"npm --prefix booking-service run dev\" \"npm --prefix api-gateway run dev\" \"npm --prefix notification-service run dev\"",
+    "dev:stop": "kill-port 4000 4001 5001 6000 7001",
+    "dev:fresh": "npm run dev:stop && npm run dev",
+    "install:services": "npm --prefix auth-service install && npm --prefix flight-service install && npm --prefix booking-service install && npm --prefix api-gateway install && npm --prefix notification-service install",
+    "db:migrate": "npm --prefix auth-service run db:migrate && npm --prefix flight-service run db:migrate && npm --prefix booking-service run db:migrate",
+    "db:seed": "npm --prefix flight-service run db:seed"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "kill-port": "^2.0.1"
+  }
+}

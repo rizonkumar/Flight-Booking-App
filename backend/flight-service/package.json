@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "npx nodemon src/index.js"
+    "dev": "npx nodemon src/index.js",
+    "db:migrate": "npx sequelize-cli db:migrate --config src/config/config.js --migrations-path src/migrations",
+    "db:migrate:undo": "npx sequelize-cli db:migrate:undo --config src/config/config.js --migrations-path src/migrations",
+    "db:seed": "npx sequelize-cli db:seed:all --config src/config/config.js --seeders-path src/seeders"
   },
   "keywords": [],
   "author": "",

@@ -3,16 +3,15 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    /**
-     * Add seed commands here.
-     *
-     * Example:
-     * await queryInterface.bulkInsert('People', [{
-     *   name: 'John Doe',
-     *   isBetaMember: false
-     * }], {});
-     */
-    await queryInterface.bulkInsert("seats", [
+    const [existing] = await queryInterface.sequelize.query(
+      "SELECT COUNT(*) AS count FROM Seats WHERE airplaneId = 1"
+    );
+
+    if (Number(existing[0].count) > 0) {
+      return;
+    }
+
+    await queryInterface.bulkInsert("Seats", [
       {
         airplaneId: 1,
         row: 1,
@@ -101,11 +100,6 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    /**
-     * Add commands to revert seed here.
-     *
-     * Example:
-     * await queryInterface.bulkDelete('People', null, {});
-     */
+    await queryInterface.bulkDelete("Seats", { airplaneId: 1 });
   },
 };
