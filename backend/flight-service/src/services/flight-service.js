@@ -35,6 +35,54 @@ async function createFlight(data) {
   }
 }
 
+async function generateDynamicFlights(departureAirportId, arrivalAirportId, tripDate) {
+  const { Airplane, Flight } = require("../models");
+  try {
+    const airplanes = await Airplane.findAll({ limit: 10 });
+    if (airplanes.length === 0) {
+      return;
+    }
+
+    const baseDate = new Date(tripDate);
+    const flightsToCreate = [];
+
+    for (let i = 0; i < 22; i++) {
+      const airplane = airplanes[i % airplanes.length];
+      
+      const departureTime = new Date(baseDate);
+      const startMinutes = 5 * 60 + i * 50;
+      departureTime.setUTCHours(Math.floor(startMinutes / 60), startMinutes % 60, 0, 0);
+
+      const durationHours = 1 + (i % 6);
+      const durationMinutes = (i * 15) % 60;
+      const arrivalTime = new Date(departureTime.getTime() + (durationHours * 60 + durationMinutes) * 60 * 1000);
+
+      const basePrice = 2800 + ((i * 733) % 12000) + (durationHours * 600);
+
+      const flightNumSuffix = String(20000 + i * 137 + Math.floor(Math.random() * 1000)).substring(0, 5);
+      const flightNumber = `FB${flightNumSuffix}`;
+
+      flightsToCreate.push({
+        flightNumber,
+        airplaneId: airplane.id,
+        departureAirportId,
+        arrivalAirportId,
+        departureTime,
+        arrivalTime,
+        price: basePrice,
+        boardingGate: `${String.fromCharCode(65 + (i % 12))}${(i % 40) + 1}`,
+        totalSeats: airplane.capacity,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
+
+    await Flight.bulkCreate(flightsToCreate, { ignoreDuplicates: true });
+  } catch (error) {
+    console.error("Error generating dynamic flights:", error);
+  }
+}
+
 async function getAllFlights(query) {
   // trips = MUM -CHN
   let customFilters = {};
@@ -68,6 +116,24 @@ async function getAllFlights(query) {
     sortFilter = sortFilters;
   }
   try {
+    if (query.trips && query.tripDate) {
+      const [dep, arr] = query.trips.split("-");
+      const { Flight } = require("../models");
+      const existingCount = await Flight.count({
+        where: {
+          departureAirportId: dep,
+          arrivalAirportId: arr,
+          departureTime: {
+            [Op.between]: [query.tripDate, query.tripDate + endingTime],
+          },
+        },
+      });
+
+      if (existingCount < 20) {
+        await generateDynamicFlights(dep, arr, query.tripDate);
+      }
+    }
+
     const flights = await flightRepository.getAllFlights(
       customFilters,
       sortFilter
