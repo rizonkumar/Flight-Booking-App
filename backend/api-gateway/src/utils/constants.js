@@ -14,8 +14,8 @@ const MESSAGES = {
 };
 
 const ROLES = {
-    ADMIN: 'ADMIN',
-    CUSTOMER: 'CUSTOMER',
+    ADMIN: 'admin',
+    CUSTOMER: 'customer',
 };
 
 module.exports = {

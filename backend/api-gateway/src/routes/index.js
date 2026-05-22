@@ -66,8 +66,8 @@ const flightServiceProxy = createServiceProxy(
   (path) => `/api/v1/flights${path}`,
 );
 
-flightRouter.get("/", authenticate, flightServiceProxy);
-flightRouter.get("/:id", authenticate, flightServiceProxy);
+flightRouter.get("/", flightServiceProxy);
+flightRouter.get("/:id", flightServiceProxy);
 
 flightRouter.post(
   "/",
@@ -125,8 +125,8 @@ const airportServiceProxy = createServiceProxy(
   (path) => `/api/v1/airports${path}`,
 );
 
-airportRouter.get("/", authenticate, airportServiceProxy);
-airportRouter.get("/:id", authenticate, airportServiceProxy);
+airportRouter.get("/", airportServiceProxy);
+airportRouter.get("/:id", airportServiceProxy);
 
 airportRouter.post(
   "/",
@@ -151,8 +151,8 @@ const cityServiceProxy = createServiceProxy(
   (path) => `/api/v1/cities${path}`,
 );
 
-cityRouter.get("/", authenticate, cityServiceProxy);
-cityRouter.get("/:id", authenticate, cityServiceProxy);
+cityRouter.get("/", cityServiceProxy);
+cityRouter.get("/:id", cityServiceProxy);
 
 cityRouter.post("/", authenticate, authorize(ROLES.ADMIN), cityServiceProxy);
 

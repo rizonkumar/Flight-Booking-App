@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Search, ArrowRightLeft, Users, Calendar, Globe } from "lucide-react";
+import { Search, ArrowRightLeft, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AirportCombobox } from "@/components/ui/airport-combobox";
+import { CustomDatePicker } from "@/components/ui/custom-date-picker";
+import { PassengersSelector } from "@/components/ui/passengers-selector";
 import { getAirports } from "@/lib/api";
 import type { Airport } from "@/lib/types";
 
@@ -113,7 +115,7 @@ export function SearchForm({
       } else {
         params.delete("country");
       }
-      router.push(`${window.location.pathname}?${params.toString()}`);
+      router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false });
     }
   };
 
@@ -278,34 +280,11 @@ export function SearchForm({
           </div>
 
           <div className={compact ? "flex-1" : ""}>
-            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-ink/50">
-              <Calendar className="mr-1 inline h-3 w-3" />
-              Date
-            </label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="h-12 w-full rounded-lg border border-border bg-white px-4 text-sm font-medium text-ink outline-none transition-colors focus:border-forest focus:ring-2 focus:ring-forest/20"
-            />
+            <CustomDatePicker value={date} onChange={setDate} label="Date" />
           </div>
 
-          <div className={compact ? "w-24" : ""}>
-            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-ink/50">
-              <Users className="mr-1 inline h-3 w-3" />
-              Passengers
-            </label>
-            <select
-              value={passengers}
-              onChange={(e) => setPassengers(e.target.value)}
-              className="h-12 w-full appearance-none rounded-lg border border-border bg-white px-4 text-sm font-medium text-ink outline-none transition-colors focus:border-forest focus:ring-2 focus:ring-forest/20"
-            >
-              {[1, 2, 3, 4, 5, 6].map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
+          <div className={compact ? "w-36" : ""}>
+            <PassengersSelector value={passengers} onChange={setPassengers} label="Passengers" />
           </div>
         </div>
 

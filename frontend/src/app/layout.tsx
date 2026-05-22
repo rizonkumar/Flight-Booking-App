@@ -3,6 +3,7 @@ import { Bricolage_Grotesque, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
+import { Providers } from "@/components/providers";
 
 const bricolage = Bricolage_Grotesque({
   variable: "--font-bricolage",
@@ -31,10 +32,13 @@ export default function RootLayout({
       <body
         className={`${bricolage.variable} ${dmSans.variable} font-sans antialiased`}
       >
-        <Navbar />
-        <main className="min-h-[calc(100vh-140px)]">{children}</main>
-        <Footer />
+        <Providers>
+          <Navbar />
+          <main className="min-h-[calc(100vh-140px)]">{children}</main>
+          <Footer />
+        </Providers>
       </body>
     </html>
   );
 }
+

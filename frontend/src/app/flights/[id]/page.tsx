@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   Plane,
   Clock,
@@ -19,9 +19,10 @@ import { getFlight, createBooking } from "@/lib/api";
 import type { Flight, User } from "@/lib/types";
 import { formatTime, formatDuration, formatDate } from "@/lib/format";
 
-export default function FlightDetailPage() {
+function FlightDetailContent() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [flight, setFlight] = useState<Flight | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -38,6 +39,16 @@ export default function FlightDetailPage() {
       }
     }
   }, []);
+
+  useEffect(() => {
+    const travellers = searchParams.get("travellers");
+    if (travellers) {
+      const val = parseInt(travellers, 10);
+      if (!isNaN(val) && val > 0) {
+        setSeats(val);
+      }
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!params.id) return;
@@ -311,5 +322,17 @@ export default function FlightDetailPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function FlightDetailPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-forest" />
+      </div>
+    }>
+      <FlightDetailContent />
+    </Suspense>
   );
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Plane, Clock, Armchair } from "lucide-react";
 import type { Flight } from "@/lib/types";
 import { formatDuration, formatTime } from "@/lib/format";
@@ -11,9 +12,12 @@ export function FlightCard({ flight }: FlightCardProps) {
   const departure = new Date(flight.departureTime);
   const arrival = new Date(flight.arrivalTime);
   const durationMs = arrival.getTime() - departure.getTime();
+  const searchParams = useSearchParams();
+  const queryString = searchParams?.toString();
+  const href = queryString ? `/flights/${flight.id}?${queryString}` : `/flights/${flight.id}`;
 
   return (
-    <Link href={`/flights/${flight.id}`}>
+    <Link href={href}>
       <div className="group rounded-xl border border-border bg-white p-5 transition-all hover:border-forest/30 hover:shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-1 items-center gap-4 sm:gap-6">

@@ -88,7 +88,7 @@ async function downloadTicket(req, res) {
 
     // Fetch User details
     const userResponse = await axios.get(
-      `${ServerConfig.AUTH_SERVICE}/api/v1/user/${booking.userId}`,
+      `${ServerConfig.AUTH_SERVICE}/api/v1/auth/user/${booking.userId}`,
     );
     const user = userResponse.data.data;
 

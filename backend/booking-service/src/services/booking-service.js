@@ -30,7 +30,12 @@ async function createBooking(data) {
     }
 
     const totalBookingAmount = data.noofSeats * flightData.price;
-    const bookingPayload = { ...data, totalCost: totalBookingAmount };
+    const bookingPayload = {
+      flightId: data.flightId,
+      userId: data.userId,
+      noOfSeats: data.noofSeats,
+      totalCost: totalBookingAmount,
+    };
 
     const booking = await bookingRespository.createBooking(
       bookingPayload,
@@ -94,7 +99,7 @@ async function makePayment(data) {
     // Async call to fetch details and enqueue booking confirmation email
     try {
       const userResponse = await axios.get(
-        `${ServerConfig.AUTH_SERVICE}/api/v1/user/${bookingDetails.userId}`
+        `${ServerConfig.AUTH_SERVICE}/api/v1/auth/user/${bookingDetails.userId}`
       );
       const user = userResponse.data.data;
       
@@ -200,7 +205,7 @@ async function cancelBooking(bookingId, forceFullRefund = false) {
     // Fetch user details to send cancellation email
     try {
       const userResponse = await axios.get(
-        `${ServerConfig.AUTH_SERVICE}/api/v1/user/${booking.userId}`
+        `${ServerConfig.AUTH_SERVICE}/api/v1/auth/user/${booking.userId}`
       );
       const user = userResponse.data.data;
       
@@ -259,7 +264,7 @@ async function getBookingDetails(bookingId) {
     let user = null;
     try {
       const userResponse = await axios.get(
-        `${ServerConfig.AUTH_SERVICE}/api/v1/user/${booking.userId}`
+        `${ServerConfig.AUTH_SERVICE}/api/v1/auth/user/${booking.userId}`
       );
       user = userResponse.data.data;
     } catch (err) {
@@ -300,7 +305,7 @@ async function getAllBookings() {
         let user = null;
         try {
           const userResponse = await axios.get(
-            `${ServerConfig.AUTH_SERVICE}/api/v1/user/${booking.userId}`
+            `${ServerConfig.AUTH_SERVICE}/api/v1/auth/user/${booking.userId}`
           );
           user = userResponse.data.data;
         } catch (err) {
@@ -344,7 +349,7 @@ async function confirmBooking(bookingId) {
     // Async call to fetch details and enqueue booking confirmation email
     try {
       const userResponse = await axios.get(
-        `${ServerConfig.AUTH_SERVICE}/api/v1/user/${booking.userId}`
+        `${ServerConfig.AUTH_SERVICE}/api/v1/auth/user/${booking.userId}`
       );
       const user = userResponse.data.data;
       

@@ -42,9 +42,11 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { useConfirm } from "@/components/ui/modal";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
+  const confirm = useConfirm();
   const [authorized, setAuthorized] = useState(false);
   
   // Tab State
@@ -158,14 +160,25 @@ export default function AdminDashboardPage() {
       await confirmBooking(id);
       await fetchData(); // reload
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to confirm booking");
+      await confirm({
+        title: "Confirmation Failed",
+        description: err.response?.data?.message || "Failed to confirm booking",
+        variant: "destructive",
+      });
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleCancelBooking = async (id: number) => {
-    if (!confirm("Are you sure you want to cancel this booking? This will grant a 100% full refund to the user.")) {
+    const isConfirmed = await confirm({
+      title: "Cancel Booking",
+      description: "Are you sure you want to cancel this booking? This will grant a 100% full refund to the user.",
+      variant: "destructive",
+      confirmText: "Cancel Booking",
+      cancelText: "Keep Booking",
+    });
+    if (!isConfirmed) {
       return;
     }
     setActionLoading(id);
@@ -173,7 +186,11 @@ export default function AdminDashboardPage() {
       await cancelBooking(id);
       await fetchData(); // reload
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to cancel booking");
+      await confirm({
+        title: "Error Cancelling",
+        description: err.response?.data?.message || "Failed to cancel booking",
+        variant: "destructive",
+      });
     } finally {
       setActionLoading(null);
     }
@@ -190,7 +207,11 @@ export default function AdminDashboardPage() {
       link.click();
       link.remove();
     } catch (err: any) {
-      alert("Failed to download ticket. Ensure the booking is confirmed (Booked status).");
+      await confirm({
+        title: "Download Failed",
+        description: "Failed to download ticket. Ensure the booking is confirmed (Booked status).",
+        variant: "warning",
+      });
     }
   };
 
@@ -198,11 +219,19 @@ export default function AdminDashboardPage() {
   const handleCreateFlight = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!flightNumber || !selectedAirplaneId || !departureAirportId || !arrivalAirportId || !departureTime || !arrivalTime || !price || !totalSeats) {
-      alert("Please fill all required fields");
+      await confirm({
+        title: "Validation Error",
+        description: "Please fill all required fields",
+        variant: "warning",
+      });
       return;
     }
     if (departureAirportId === arrivalAirportId) {
-      alert("Departure and Arrival airports must be different");
+      await confirm({
+        title: "Routing Conflict",
+        description: "Departure and Arrival airports must be different",
+        variant: "warning",
+      });
       return;
     }
     try {
@@ -228,14 +257,22 @@ export default function AdminDashboardPage() {
       setTotalSeats("");
       await fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to create flight");
+      await confirm({
+        title: "Flight Creation Failed",
+        description: err.response?.data?.message || "Failed to create flight",
+        variant: "destructive",
+      });
     }
   };
 
   const handleCreateAirplane = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!airplaneModel || !airplaneCapacity) {
-      alert("Please fill all fields");
+      await confirm({
+        title: "Validation Error",
+        description: "Please fill all fields",
+        variant: "warning",
+      });
       return;
     }
     try {
@@ -248,14 +285,22 @@ export default function AdminDashboardPage() {
       setAirplaneCapacity("");
       await fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to create airplane");
+      await confirm({
+        title: "Airplane Creation Failed",
+        description: err.response?.data?.message || "Failed to create airplane",
+        variant: "destructive",
+      });
     }
   };
 
   const handleCreateAirport = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!airportName || !airportCode || !airportCityId) {
-      alert("Please fill all required fields");
+      await confirm({
+        title: "Validation Error",
+        description: "Please fill all required fields",
+        variant: "warning",
+      });
       return;
     }
     try {
@@ -272,14 +317,22 @@ export default function AdminDashboardPage() {
       setAirportAddress("");
       await fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to create airport");
+      await confirm({
+        title: "Airport Creation Failed",
+        description: err.response?.data?.message || "Failed to create airport",
+        variant: "destructive",
+      });
     }
   };
 
   const handleCreateCity = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cityName) {
-      alert("Please fill in city name");
+      await confirm({
+        title: "Validation Error",
+        description: "Please fill in city name",
+        variant: "warning",
+      });
       return;
     }
     try {
@@ -288,7 +341,11 @@ export default function AdminDashboardPage() {
       setCityName("");
       await fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to create city");
+      await confirm({
+        title: "City Creation Failed",
+        description: err.response?.data?.message || "Failed to create city",
+        variant: "destructive",
+      });
     }
   };
 

@@ -80,7 +80,10 @@ const authorize = (...roles) => {
             });
         }
 
-        if (!roles.includes(req.user.role)) {
+        const normalizedUserRole = req.user.role ? req.user.role.toLowerCase() : '';
+        const normalizedRoles = roles.map(r => r.toLowerCase());
+
+        if (!normalizedRoles.includes(normalizedUserRole)) {
             return res.status(StatusCodes.FORBIDDEN).json({
                 success: false,
                 message: `Access denied. Required role(s): ${roles.join(', ')}. Your role: ${req.user.role}.`,
