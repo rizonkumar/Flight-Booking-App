@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Search, ArrowRightLeft, Users, Calendar, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AirportCombobox } from "@/components/ui/airport-combobox";
 import { getAirports } from "@/lib/api";
 import type { Airport } from "@/lib/types";
 
@@ -72,6 +73,14 @@ export function SearchForm({
   }, []);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const urlCountry = params.get("country") || "";
+      setSelectedCountry(urlCountry);
+    }
+  }, []);
+
+  useEffect(() => {
     if (selectedCountry) {
       if (origin) {
         const originAirport = airports.find((a) => a.code === origin);
@@ -93,6 +102,20 @@ export function SearchForm({
       }
     }
   }, [selectedCountry, airports]);
+
+  const handleCountrySelect = (code: string) => {
+    setSelectedCountry(code);
+    
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (code) {
+        params.set("country", code);
+      } else {
+        params.delete("country");
+      }
+      router.push(`${window.location.pathname}?${params.toString()}`);
+    }
+  };
 
   const availableCountries = Array.from(
     new Set(
@@ -125,6 +148,7 @@ export function SearchForm({
     }
     if (date) params.set("tripDate", date);
     if (passengers) params.set("travellers", passengers);
+    if (selectedCountry) params.set("country", selectedCountry);
     router.push(`/flights?${params.toString()}`);
   }
 
@@ -138,7 +162,7 @@ export function SearchForm({
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => setSelectedCountry("")}
+            onClick={() => handleCountrySelect("")}
             className={`h-8 px-3.5 text-xs font-semibold rounded-full border transition-all ${
               selectedCountry === ""
                 ? "bg-forest border-forest text-white shadow-sm"
@@ -160,7 +184,7 @@ export function SearchForm({
               <button
                 key={c}
                 type="button"
-                onClick={() => setSelectedCountry(code)}
+                onClick={() => handleCountrySelect(code)}
                 className={`h-8 px-3.5 text-xs font-semibold rounded-full border transition-all ${
                   selectedCountry === code
                     ? "bg-forest border-forest text-white shadow-sm"
@@ -181,7 +205,7 @@ export function SearchForm({
             }
             onChange={(e) => {
               if (e.target.value) {
-                setSelectedCountry(e.target.value);
+                handleCountrySelect(e.target.value);
               }
             }}
             className="h-8 rounded-full border border-border bg-secondary px-3 text-xs font-semibold text-ink/70 outline-none transition-all hover:border-forest/30 focus:border-forest focus:ring-1 focus:ring-forest/20"
@@ -222,21 +246,13 @@ export function SearchForm({
           }
         >
           <div className="relative flex-1">
-            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-ink/50">
-              From
-            </label>
-            <select
+            <AirportCombobox
+              airports={filteredAirports}
               value={origin}
-              onChange={(e) => setOrigin(e.target.value)}
-              className="h-12 w-full appearance-none rounded-lg border border-border bg-white px-4 text-sm font-medium text-ink outline-none transition-colors focus:border-forest focus:ring-2 focus:ring-forest/20"
-            >
-              <option value="">Select origin</option>
-              {filteredAirports.map((a) => (
-                <option key={a.id} value={a.code}>
-                  {a.code} — {a.name}
-                </option>
-              ))}
-            </select>
+              onChange={setOrigin}
+              placeholder="Select origin"
+              label="From"
+            />
           </div>
 
           {!compact && (
@@ -252,21 +268,13 @@ export function SearchForm({
           )}
 
           <div className={compact ? "flex-1" : ""}>
-            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-ink/50">
-              To
-            </label>
-            <select
+            <AirportCombobox
+              airports={filteredAirports}
               value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-              className="h-12 w-full appearance-none rounded-lg border border-border bg-white px-4 text-sm font-medium text-ink outline-none transition-colors focus:border-forest focus:ring-2 focus:ring-forest/20"
-            >
-              <option value="">Select destination</option>
-              {filteredAirports.map((a) => (
-                <option key={a.id} value={a.code}>
-                  {a.code} — {a.name}
-                </option>
-              ))}
-            </select>
+              onChange={setDestination}
+              placeholder="Select destination"
+              label="To"
+            />
           </div>
 
           <div className={compact ? "flex-1" : ""}>

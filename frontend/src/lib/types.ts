@@ -51,6 +51,8 @@ export interface Booking {
   totalCost: number;
   createdAt: string;
   updatedAt: string;
+  flight?: Flight;
+  user?: User;
 }
 
 export interface User {
@@ -106,5 +108,6 @@ export interface FlightSearchParams {
   travellers?: string;
   tripDate?: string;
   sort?: string;
+  country?: string;
 }
 

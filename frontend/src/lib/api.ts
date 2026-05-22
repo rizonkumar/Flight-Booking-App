@@ -10,6 +10,7 @@ import type {
   SigninPayload,
   AuthResponse,
   CancelBookingResponse,
+  Airplane,
 } from "./types";
 
 const api = axios.create({
@@ -84,3 +85,58 @@ export async function downloadTicket(id: number): Promise<Blob> {
   });
   return data;
 }
+
+export async function getAllBookings(): Promise<Booking[]> {
+  const { data } = await api.get<ApiResponse<Booking[]>>("/api/v1/bookings");
+  return data.data;
+}
+
+export async function confirmBooking(id: number): Promise<Booking> {
+  const { data } = await api.patch<ApiResponse<Booking>>(`/api/v1/bookings/${id}/confirm`);
+  return data.data;
+}
+
+export async function getAirplanes(): Promise<Airplane[]> {
+  const { data } = await api.get<ApiResponse<Airplane[]>>("/api/v1/airplanes");
+  return data.data;
+}
+
+export async function createFlight(payload: {
+  flightNumber: string;
+  airplaneId: number;
+  departureAirportId: string;
+  arrivalAirportId: string;
+  departureTime: string;
+  arrivalTime: string;
+  price: number;
+  totalSeats: number;
+}): Promise<Flight> {
+  const { data } = await api.post<ApiResponse<Flight>>("/api/v1/flights", payload);
+  return data.data;
+}
+
+export async function createAirplane(payload: {
+  modelNumber: string;
+  capacity: number;
+}) : Promise<Airplane> {
+  const { data } = await api.post<ApiResponse<Airplane>>("/api/v1/airplanes", payload);
+  return data.data;
+}
+
+export async function createAirport(payload: {
+  name: string;
+  code: string;
+  cityId: number;
+  address?: string;
+}): Promise<Airport> {
+  const { data } = await api.post<ApiResponse<Airport>>("/api/v1/airports", payload);
+  return data.data;
+}
+
+export async function createCity(payload: {
+  name: string;
+}): Promise<City> {
+  const { data } = await api.post<ApiResponse<City>>("/api/v1/cities", payload);
+  return data.data;
+}
+

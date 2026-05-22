@@ -1,6 +1,6 @@
 const { StatusCodes } = require("http-status-codes");
 const { MESSAGES } = require("../utils/constants");
-const { SuccessResponse, ErrorResponse } = require("../utils/common");
+const { SuccessResponse, ErrorResponse, Enums } = require("../utils/common");
 const { BookingService } = require("../services");
 const axios = require("axios");
 const { ServerConfig } = require("../config");
@@ -50,7 +50,8 @@ async function makePayment(req, res) {
 
 async function cancelBooking(req, res) {
   try {
-    const result = await BookingService.cancelBooking(req.params.id);
+    const isAdmin = req.headers["x-user-role"] === "admin";
+    const result = await BookingService.cancelBooking(req.params.id, isAdmin);
     const response = SuccessResponse();
     response.data = result;
     response.message = "Booking successfully cancelled";
@@ -69,8 +70,8 @@ async function downloadTicket(req, res) {
   try {
     const bookingId = req.params.id;
     const booking = await BookingService.getBookingDetails(bookingId);
-    
-    if (booking.status !== "BOOKED") {
+
+    if (booking.status !== Enums.BOOKING_STATUS.BOOKED) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         message: "Ticket is only available for confirmed bookings",
@@ -78,32 +79,32 @@ async function downloadTicket(req, res) {
         data: {},
       });
     }
-    
+
     // Fetch Flight details
     const flightResponse = await axios.get(
-      `${ServerConfig.FLIGHT_SERVICE}/api/v1/flights/${booking.flightId}`
+      `${ServerConfig.FLIGHT_SERVICE}/api/v1/flights/${booking.flightId}`,
     );
     const flight = flightResponse.data.data;
-    
+
     // Fetch User details
     const userResponse = await axios.get(
-      `${ServerConfig.AUTH_SERVICE}/api/v1/user/${booking.userId}`
+      `${ServerConfig.AUTH_SERVICE}/api/v1/user/${booking.userId}`,
     );
     const user = userResponse.data.data;
-    
+
     const passengerName = `${user.firstName} ${user.lastName || ""}`.trim();
-    
+
     const bookingPayload = {
       ...(booking.toJSON ? booking.toJSON() : booking),
       passengerName,
     };
-    
+
     const pdfBuffer = await generateTicketPDF(bookingPayload, flight);
-    
+
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=Ticket-${bookingId}.pdf`
+      `attachment; filename=Ticket-${bookingId}.pdf`,
     );
     return res.status(StatusCodes.OK).send(pdfBuffer);
   } catch (error) {
@@ -116,4 +117,45 @@ async function downloadTicket(req, res) {
   }
 }
 
-module.exports = { createBooking, makePayment, cancelBooking, downloadTicket };
+async function getAllBookings(req, res) {
+  try {
+    const bookings = await BookingService.getAllBookings();
+    const response = SuccessResponse();
+    response.data = bookings;
+    response.message = "Successfully fetched all bookings";
+    return res.status(StatusCodes.OK).json(response);
+  } catch (error) {
+    const response = ErrorResponse();
+    response.error = error.explanation || error.message;
+    response.message = "Failed to fetch bookings list";
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(response);
+  }
+}
+
+async function confirmBooking(req, res) {
+  try {
+    const booking = await BookingService.confirmBooking(req.params.id);
+    const response = SuccessResponse();
+    response.data = booking;
+    response.message = "Booking successfully confirmed";
+    return res.status(StatusCodes.OK).json(response);
+  } catch (error) {
+    const response = ErrorResponse();
+    response.error = error.explanation || error.message;
+    response.message = "Failed to confirm booking";
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(response);
+  }
+}
+
+module.exports = {
+  createBooking,
+  makePayment,
+  cancelBooking,
+  downloadTicket,
+  getAllBookings,
+  confirmBooking,
+};

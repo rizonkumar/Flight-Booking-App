@@ -101,6 +101,19 @@ async function getAllFlights(query) {
   let customFilters = {};
   let sortFilter = [];
   const endingTime = " 23:59:00";
+  
+  if (query.country) {
+    const CODE_TO_COUNTRY = {
+      IND: "India",
+      USA: "United States",
+    };
+    const countryName = CODE_TO_COUNTRY[query.country.toUpperCase()] || query.country;
+    customFilters[Op.or] = [
+      { "$departureAirport.City.name$": { [Op.like]: `%${countryName}%` } },
+      { "$arrivalAirport.City.name$": { [Op.like]: `%${countryName}%` } }
+    ];
+  }
+
   // TODO: Move the query fitlers to different function
   if (query.trips) {
     [departureAirportId, arrivalAirportId] = query.trips.split("-");

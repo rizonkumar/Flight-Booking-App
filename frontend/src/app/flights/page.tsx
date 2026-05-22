@@ -22,6 +22,7 @@ function FlightsContent() {
   const trips = searchParams.get("trips") || "";
   const tripDate = searchParams.get("tripDate") || "";
   const travellers = searchParams.get("travellers") || "";
+  const country = searchParams.get("country") || "";
 
   const fetchFlights = useCallback(async () => {
     setLoading(true);
@@ -31,6 +32,7 @@ function FlightsContent() {
       if (trips) params.trips = trips;
       if (tripDate) params.tripDate = tripDate;
       if (travellers) params.travellers = travellers;
+      if (country) params.country = country;
 
       const data = await getFlights(params);
       setFlights(data);
@@ -44,7 +46,7 @@ function FlightsContent() {
     } finally {
       setLoading(false);
     }
-  }, [trips, tripDate, travellers]);
+  }, [trips, tripDate, travellers, country]);
 
   useEffect(() => {
     fetchFlights();
