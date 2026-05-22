@@ -5,9 +5,9 @@ The **API Gateway** is the single entry point for the Flight Booking System. All
 ## Architecture
 
 ```
-Client → API Gateway (:6000) → Flight-Service (:3000)
-                              → Booking-Service (:4000)
-                              → Auth-Service (:5000)
+Client → API Gateway (:8080) → Flight-Service (:4000)
+                              → Booking-Service (:4001)
+                              → Auth-Service (:5001)
 ```
 
 ## Setup
@@ -17,10 +17,10 @@ Client → API Gateway (:6000) → Flight-Service (:3000)
 npm install
 
 # 2. Configure environment (already included — edit .env if needed)
-# PORT=6000
-# FLIGHT_SERVICE=http://localhost:3000
-# BOOKING_SERVICE=http://localhost:4000
-# AUTH_SERVICE=http://localhost:5000
+# API_GATEWAY_PORT=8080
+# FLIGHT_SERVICE=http://localhost:4000
+# BOOKING_SERVICE=http://localhost:4001
+# AUTH_SERVICE=http://localhost:5001
 # JWT_SECRET=flight_booking_jwt_secret_key_2024
 
 # 3. Start in development mode
@@ -41,9 +41,9 @@ npm run dev
 
 | Method | Gateway Route                    | Upstream Route              | Auth | Role |
 |--------|----------------------------------|-----------------------------|------|------|
-| POST   | `/api/v1/auth/signup`            | `/api/v1/signup`            | ✗    | —    |
-| POST   | `/api/v1/auth/signin`            | `/api/v1/signin`            | ✗    | —    |
-| POST   | `/api/v1/auth/refresh-token`     | `/api/v1/refresh-token`     | ✗    | —    |
+| POST   | `/api/v1/auth/signup`            | `/api/v1/auth/signup`            | ✗    | —    |
+| POST   | `/api/v1/auth/signin`            | `/api/v1/auth/signin`            | ✗    | —    |
+| POST   | `/api/v1/auth/refresh-token`     | `/api/v1/auth/refresh-token`     | ✗    | —    |
 
 ### Flight Routes (proxied to Flight-Service)
 
