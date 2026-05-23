@@ -45,14 +45,17 @@ export default function BookingDetailPage() {
   const [paymentError, setPaymentError] = useState("");
   const [cancelSuccess, setCancelSuccess] = useState<CancelBookingResponse | null>(null);
   const [cancelError, setCancelError] = useState("");
+  const [authorized, setAuthorized] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
       const token = localStorage.getItem("skyroute_token");
       if (!token) {
-        router.push("/");
+        setAuthorized(false);
+        setLoading(false);
         return;
       }
+      setAuthorized(true);
       const stored = localStorage.getItem("skyroute_bookings");
       if (stored) {
         const bookings: Booking[] = JSON.parse(stored);
@@ -68,7 +71,7 @@ export default function BookingDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [params.id, router]);
+  }, [params.id]);
 
   useEffect(() => {
     loadData();
@@ -78,7 +81,10 @@ export default function BookingDetailPage() {
     const checkAuth = () => {
       const token = localStorage.getItem("skyroute_token");
       if (!token) {
-        router.push("/");
+        setAuthorized(false);
+      } else {
+        setAuthorized(true);
+        loadData();
       }
     };
     
@@ -86,7 +92,7 @@ export default function BookingDetailPage() {
     return () => {
       window.removeEventListener("skyroute-auth-change", checkAuth);
     };
-  }, [router]);
+  }, [loadData]);
 
   async function handlePayment() {
     if (!booking) return;
@@ -171,6 +177,32 @@ export default function BookingDetailPage() {
 
   if (loading) {
     return <LoadingScreen variant="loader" minHeight="min-h-[60vh]" />;
+  }
+
+  if (!authorized) {
+    return (
+      <div className="bg-secondary min-h-screen">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+          <div className="rounded-2xl border border-border bg-white p-16 text-center shadow-sm max-w-xl mx-auto">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-mint/30">
+              <Plane className="h-7 w-7 text-forest" />
+            </div>
+            <h2 className="mt-5 font-display text-xl font-bold text-ink">
+              Authentication Required
+            </h2>
+            <p className="mt-2 text-sm text-ink/50">
+              Please sign in to access this flight itinerary.
+            </p>
+            <button
+              onClick={() => window.dispatchEvent(new Event("skyroute-trigger-signin"))}
+              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-forest px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-forest-light shadow-sm"
+            >
+              Sign In to Continue
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!booking) {
