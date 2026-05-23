@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   Plane,
   Clock,
@@ -18,10 +18,12 @@ import { Button } from "@/components/ui/button";
 import { getFlight, createBooking } from "@/lib/api";
 import type { Flight, User } from "@/lib/types";
 import { formatTime, formatDuration, formatDate } from "@/lib/format";
+import { LoadingScreen } from "@/components/loading-screen";
 
-export default function FlightDetailPage() {
+function FlightDetailContent() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [flight, setFlight] = useState<Flight | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -40,6 +42,16 @@ export default function FlightDetailPage() {
   }, []);
 
   useEffect(() => {
+    const travellers = searchParams.get("travellers");
+    if (travellers) {
+      const val = parseInt(travellers, 10);
+      if (!isNaN(val) && val > 0) {
+        setSeats(val);
+      }
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     if (!params.id) return;
     getFlight(params.id as string)
       .then(setFlight)
@@ -48,15 +60,15 @@ export default function FlightDetailPage() {
   }, [params.id]);
 
   useEffect(() => {
-    const handleStorageChange = () => {
+    const handleAuthChange = () => {
       const stored = localStorage.getItem("skyroute_user");
       setCurrentUser(stored ? JSON.parse(stored) : null);
     };
-    window.addEventListener("storage", handleStorageChange);
-    const interval = setInterval(handleStorageChange, 1000);
+    window.addEventListener("storage", handleAuthChange);
+    window.addEventListener("skyroute-auth-change", handleAuthChange);
     return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      clearInterval(interval);
+      window.removeEventListener("storage", handleAuthChange);
+      window.removeEventListener("skyroute-auth-change", handleAuthChange);
     };
   }, []);
 
@@ -89,11 +101,7 @@ export default function FlightDetailPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-forest" />
-      </div>
-    );
+    return <LoadingScreen variant="loader" minHeight="min-h-[60vh]" />;
   }
 
   if (error || !flight) {
@@ -311,5 +319,13 @@ export default function FlightDetailPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function FlightDetailPage() {
+  return (
+    <Suspense fallback={<LoadingScreen variant="loader" minHeight="min-h-[60vh]" />}>
+      <FlightDetailContent />
+    </Suspense>
   );
 }

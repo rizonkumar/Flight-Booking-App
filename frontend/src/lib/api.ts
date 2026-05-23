@@ -27,18 +27,44 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("skyroute_token");
+        localStorage.removeItem("skyroute_user");
+        localStorage.removeItem("skyroute_bookings");
+        window.dispatchEvent(new Event("skyroute-auth-change"));
+        window.dispatchEvent(new Event("skyroute-session-expired"));
+      }
+    }
+    return Promise.reject(error);
+  },
+);
+
 export async function signup(payload: SignupPayload): Promise<AuthResponse> {
-  const { data } = await api.post<ApiResponse<AuthResponse>>("/api/v1/auth/signup", payload);
+  const { data } = await api.post<ApiResponse<AuthResponse>>(
+    "/api/v1/auth/signup",
+    payload,
+  );
   return data.data;
 }
 
 export async function signin(payload: SigninPayload): Promise<AuthResponse> {
-  const { data } = await api.post<ApiResponse<AuthResponse>>("/api/v1/auth/signin", payload);
+  const { data } = await api.post<ApiResponse<AuthResponse>>(
+    "/api/v1/auth/signin",
+    payload,
+  );
   return data.data;
 }
 
-export async function getFlights(params?: FlightSearchParams): Promise<Flight[]> {
-  const { data } = await api.get<ApiResponse<Flight[]>>("/api/v1/flights", { params });
+export async function getFlights(
+  params?: FlightSearchParams,
+): Promise<Flight[]> {
+  const { data } = await api.get<ApiResponse<Flight[]>>("/api/v1/flights", {
+    params,
+  });
   return data.data;
 }
 
@@ -62,7 +88,10 @@ export async function createBooking(payload: {
   userId: number;
   noofSeats: number;
 }): Promise<Booking> {
-  const { data } = await api.post<ApiResponse<Booking>>("/api/v1/bookings", payload);
+  const { data } = await api.post<ApiResponse<Booking>>(
+    "/api/v1/bookings",
+    payload,
+  );
   return data.data;
 }
 
@@ -74,8 +103,12 @@ export async function makePayment(payload: {
   await api.post("/api/v1/bookings/payments", payload);
 }
 
-export async function cancelBooking(id: number): Promise<CancelBookingResponse> {
-  const { data } = await api.patch<ApiResponse<CancelBookingResponse>>(`/api/v1/bookings/${id}/cancel`);
+export async function cancelBooking(
+  id: number,
+): Promise<CancelBookingResponse> {
+  const { data } = await api.patch<ApiResponse<CancelBookingResponse>>(
+    `/api/v1/bookings/${id}/cancel`,
+  );
   return data.data;
 }
 
@@ -92,7 +125,9 @@ export async function getAllBookings(): Promise<Booking[]> {
 }
 
 export async function confirmBooking(id: number): Promise<Booking> {
-  const { data } = await api.patch<ApiResponse<Booking>>(`/api/v1/bookings/${id}/confirm`);
+  const { data } = await api.patch<ApiResponse<Booking>>(
+    `/api/v1/bookings/${id}/confirm`,
+  );
   return data.data;
 }
 
@@ -111,15 +146,21 @@ export async function createFlight(payload: {
   price: number;
   totalSeats: number;
 }): Promise<Flight> {
-  const { data } = await api.post<ApiResponse<Flight>>("/api/v1/flights", payload);
+  const { data } = await api.post<ApiResponse<Flight>>(
+    "/api/v1/flights",
+    payload,
+  );
   return data.data;
 }
 
 export async function createAirplane(payload: {
   modelNumber: string;
   capacity: number;
-}) : Promise<Airplane> {
-  const { data } = await api.post<ApiResponse<Airplane>>("/api/v1/airplanes", payload);
+}): Promise<Airplane> {
+  const { data } = await api.post<ApiResponse<Airplane>>(
+    "/api/v1/airplanes",
+    payload,
+  );
   return data.data;
 }
 
@@ -129,14 +170,14 @@ export async function createAirport(payload: {
   cityId: number;
   address?: string;
 }): Promise<Airport> {
-  const { data } = await api.post<ApiResponse<Airport>>("/api/v1/airports", payload);
+  const { data } = await api.post<ApiResponse<Airport>>(
+    "/api/v1/airports",
+    payload,
+  );
   return data.data;
 }
 
-export async function createCity(payload: {
-  name: string;
-}): Promise<City> {
+export async function createCity(payload: { name: string }): Promise<City> {
   const { data } = await api.post<ApiResponse<City>>("/api/v1/cities", payload);
   return data.data;
 }
-

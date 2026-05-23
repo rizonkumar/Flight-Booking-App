@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { 
-  getAllBookings, 
-  confirmBooking, 
-  cancelBooking, 
+import {
+  getAllBookings,
+  confirmBooking,
+  cancelBooking,
   downloadTicket,
   getFlights,
   createFlight,
@@ -14,61 +14,76 @@ import {
   getAirports,
   createAirport,
   getCities,
-  createCity
+  createCity,
 } from "@/lib/api";
 import type { Booking, Flight, Airplane, Airport, City } from "@/lib/types";
-import { 
-  Shield, 
-  Calendar, 
-  User as UserIcon, 
-  Plane, 
-  Search, 
-  Filter, 
-  Download, 
-  CheckCircle2, 
-  XCircle, 
-  Plus, 
-  Building2, 
-  MapPin, 
+import {
+  Shield,
+  Calendar,
+  User as UserIcon,
+  Plane,
+  Search,
+  Filter,
+  Download,
+  CheckCircle2,
+  XCircle,
+  Plus,
+  Building2,
+  MapPin,
   RefreshCw,
   Clock,
   DollarSign,
   Ticket,
-  ChevronRight
+  ChevronRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { LoadingScreen } from "@/components/loading-screen";
+import { formatDateTime } from "@/lib/format";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { useConfirm } from "@/components/ui/modal";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
+  const confirm = useConfirm();
   const [authorized, setAuthorized] = useState(false);
-  
-  // Tab State
-  const [activeTab, setActiveTab] = useState<"bookings" | "flights" | "airplanes-airports" | "cities">("bookings");
-  
-  // Main Data States
+
+  const [activeTab, setActiveTab] = useState<
+    "bookings" | "flights" | "airplanes-airports" | "cities"
+  >("bookings");
+
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [flights, setFlights] = useState<Flight[]>([]);
   const [airplanes, setAirplanes] = useState<Airplane[]>([]);
   const [airports, setAirports] = useState<Airport[]>([]);
   const [cities, setCities] = useState<City[]>([]);
-  
-  // Loading & Error States
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<number | null>(null); // bookingId or flightId being processed
 
-  // Form States (Modals)
   const [isFlightModalOpen, setIsFlightModalOpen] = useState(false);
   const [isAirplaneModalOpen, setIsAirplaneModalOpen] = useState(false);
   const [isAirportModalOpen, setIsAirportModalOpen] = useState(false);
   const [isCityModalOpen, setIsCityModalOpen] = useState(false);
 
-  // New Flight Form fields
   const [flightNumber, setFlightNumber] = useState("");
   const [selectedAirplaneId, setSelectedAirplaneId] = useState("");
   const [departureAirportId, setDepartureAirportId] = useState("");
@@ -78,34 +93,35 @@ export default function AdminDashboardPage() {
   const [price, setPrice] = useState("");
   const [totalSeats, setTotalSeats] = useState("");
 
-  // New Airplane Form fields
   const [airplaneModel, setAirplaneModel] = useState("");
   const [airplaneCapacity, setAirplaneCapacity] = useState("");
 
-  // New Airport Form fields
   const [airportName, setAirportName] = useState("");
   const [airportCode, setAirportCode] = useState("");
   const [airportCityId, setAirportCityId] = useState("");
   const [airportAddress, setAirportAddress] = useState("");
 
-  // New City Form fields
   const [cityName, setCityName] = useState("");
 
-  // Search & Filter States (Bookings)
   const [bookingSearch, setBookingSearch] = useState("");
   const [bookingFilterStatus, setBookingFilterStatus] = useState<string>("all");
 
-  // Fetch all dashboard data
   const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const [bookingsData, flightsData, airplanesData, airportsData, citiesData] = await Promise.all([
+      const [
+        bookingsData,
+        flightsData,
+        airplanesData,
+        airportsData,
+        citiesData,
+      ] = await Promise.all([
         getAllBookings(),
         getFlights(),
         getAirplanes(),
         getAirports(),
-        getCities()
+        getCities(),
       ]);
       setBookings(bookingsData);
       setFlights(flightsData);
@@ -114,14 +130,39 @@ export default function AdminDashboardPage() {
       setCities(citiesData);
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.message || err.message || "Failed to load admin data");
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to load admin data",
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  // Check authorization and fetch data only if authorized
   useEffect(() => {
+    const checkAuth = () => {
+      if (typeof window !== "undefined") {
+        const userStr = localStorage.getItem("skyroute_user");
+        const token = localStorage.getItem("skyroute_token");
+        if (userStr && token) {
+          try {
+            const user = JSON.parse(userStr);
+            if (user.role === "admin") {
+              setAuthorized(true);
+              return;
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        setAuthorized(false);
+        router.push("/");
+      }
+    };
+
+    checkAuth();
+
     if (typeof window !== "undefined") {
       const userStr = localStorage.getItem("skyroute_user");
       const token = localStorage.getItem("skyroute_token");
@@ -129,51 +170,67 @@ export default function AdminDashboardPage() {
         try {
           const user = JSON.parse(userStr);
           if (user.role === "admin") {
-            setAuthorized(true);
             fetchData();
-            return;
           }
-        } catch (e) {
-          // ignore, will redirect
-        }
+        } catch (e) {}
       }
-      router.push("/");
     }
+
+    window.addEventListener("skyroute-auth-change", checkAuth);
+    return () => {
+      window.removeEventListener("skyroute-auth-change", checkAuth);
+    };
   }, [router]);
 
-  // Update total seats automatically when airplane is selected
   useEffect(() => {
     if (selectedAirplaneId) {
-      const airplane = airplanes.find(a => a.id === parseInt(selectedAirplaneId));
+      const airplane = airplanes.find(
+        (a) => a.id === parseInt(selectedAirplaneId),
+      );
       if (airplane) {
         setTotalSeats(airplane.capacity.toString());
       }
     }
   }, [selectedAirplaneId, airplanes]);
 
-  // Booking Actions
   const handleConfirmBooking = async (id: number) => {
     setActionLoading(id);
     try {
       await confirmBooking(id);
-      await fetchData(); // reload
+      await fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to confirm booking");
+      await confirm({
+        title: "Confirmation Failed",
+        description: err.response?.data?.message || "Failed to confirm booking",
+        variant: "destructive",
+      });
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleCancelBooking = async (id: number) => {
-    if (!confirm("Are you sure you want to cancel this booking? This will grant a 100% full refund to the user.")) {
+    const isConfirmed = await confirm({
+      title: "Cancel Booking",
+      description:
+        "Are you sure you want to cancel this booking? This will grant a 100% full refund to the user.",
+      variant: "destructive",
+      confirmText: "Cancel Booking",
+      cancelText: "Keep Booking",
+    });
+    if (!isConfirmed) {
       return;
     }
     setActionLoading(id);
     try {
       await cancelBooking(id);
-      await fetchData(); // reload
+      await fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to cancel booking");
+      await confirm({
+        title: "Error Cancelling",
+        description: err.response?.data?.message || "Failed to cancel booking",
+        variant: "destructive",
+      });
     } finally {
       setActionLoading(null);
     }
@@ -190,19 +247,40 @@ export default function AdminDashboardPage() {
       link.click();
       link.remove();
     } catch (err: any) {
-      alert("Failed to download ticket. Ensure the booking is confirmed (Booked status).");
+      await confirm({
+        title: "Download Failed",
+        description:
+          "Failed to download ticket. Ensure the booking is confirmed (Booked status).",
+        variant: "warning",
+      });
     }
   };
 
-  // Form Submissions
   const handleCreateFlight = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!flightNumber || !selectedAirplaneId || !departureAirportId || !arrivalAirportId || !departureTime || !arrivalTime || !price || !totalSeats) {
-      alert("Please fill all required fields");
+    if (
+      !flightNumber ||
+      !selectedAirplaneId ||
+      !departureAirportId ||
+      !arrivalAirportId ||
+      !departureTime ||
+      !arrivalTime ||
+      !price ||
+      !totalSeats
+    ) {
+      await confirm({
+        title: "Validation Error",
+        description: "Please fill all required fields",
+        variant: "warning",
+      });
       return;
     }
     if (departureAirportId === arrivalAirportId) {
-      alert("Departure and Arrival airports must be different");
+      await confirm({
+        title: "Routing Conflict",
+        description: "Departure and Arrival airports must be different",
+        variant: "warning",
+      });
       return;
     }
     try {
@@ -214,10 +292,9 @@ export default function AdminDashboardPage() {
         departureTime: new Date(departureTime).toISOString(),
         arrivalTime: new Date(arrivalTime).toISOString(),
         price: parseFloat(price),
-        totalSeats: parseInt(totalSeats)
+        totalSeats: parseInt(totalSeats),
       });
       setIsFlightModalOpen(false);
-      // Reset form
       setFlightNumber("");
       setSelectedAirplaneId("");
       setDepartureAirportId("");
@@ -228,34 +305,50 @@ export default function AdminDashboardPage() {
       setTotalSeats("");
       await fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to create flight");
+      await confirm({
+        title: "Flight Creation Failed",
+        description: err.response?.data?.message || "Failed to create flight",
+        variant: "destructive",
+      });
     }
   };
 
   const handleCreateAirplane = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!airplaneModel || !airplaneCapacity) {
-      alert("Please fill all fields");
+      await confirm({
+        title: "Validation Error",
+        description: "Please fill all fields",
+        variant: "warning",
+      });
       return;
     }
     try {
       await createAirplane({
         modelNumber: airplaneModel,
-        capacity: parseInt(airplaneCapacity)
+        capacity: parseInt(airplaneCapacity),
       });
       setIsAirplaneModalOpen(false);
       setAirplaneModel("");
       setAirplaneCapacity("");
       await fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to create airplane");
+      await confirm({
+        title: "Airplane Creation Failed",
+        description: err.response?.data?.message || "Failed to create airplane",
+        variant: "destructive",
+      });
     }
   };
 
   const handleCreateAirport = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!airportName || !airportCode || !airportCityId) {
-      alert("Please fill all required fields");
+      await confirm({
+        title: "Validation Error",
+        description: "Please fill all required fields",
+        variant: "warning",
+      });
       return;
     }
     try {
@@ -263,7 +356,7 @@ export default function AdminDashboardPage() {
         name: airportName,
         code: airportCode.toUpperCase(),
         cityId: parseInt(airportCityId),
-        address: airportAddress || undefined
+        address: airportAddress || undefined,
       });
       setIsAirportModalOpen(false);
       setAirportName("");
@@ -272,14 +365,22 @@ export default function AdminDashboardPage() {
       setAirportAddress("");
       await fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to create airport");
+      await confirm({
+        title: "Airport Creation Failed",
+        description: err.response?.data?.message || "Failed to create airport",
+        variant: "destructive",
+      });
     }
   };
 
   const handleCreateCity = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cityName) {
-      alert("Please fill in city name");
+      await confirm({
+        title: "Validation Error",
+        description: "Please fill in city name",
+        variant: "warning",
+      });
       return;
     }
     try {
@@ -288,32 +389,44 @@ export default function AdminDashboardPage() {
       setCityName("");
       await fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to create city");
+      await confirm({
+        title: "City Creation Failed",
+        description: err.response?.data?.message || "Failed to create city",
+        variant: "destructive",
+      });
     }
   };
 
-  // Calculations for KPI Cards
   const totalBookingsCount = bookings.length;
-  const confirmedBookingsCount = bookings.filter(b => b.status === "booked").length;
-  const pendingBookingsCount = bookings.filter(b => b.status === "initiated" || b.status === "pending").length;
-  const cancelledBookingsCount = bookings.filter(b => b.status === "cancelled").length;
-  
+  const confirmedBookingsCount = bookings.filter(
+    (b) => b.status === "booked",
+  ).length;
+  const pendingBookingsCount = bookings.filter(
+    (b) => b.status === "initiated" || b.status === "pending",
+  ).length;
+  const cancelledBookingsCount = bookings.filter(
+    (b) => b.status === "cancelled",
+  ).length;
+
   const totalRevenue = bookings
-    .filter(b => b.status === "booked")
+    .filter((b) => b.status === "booked")
     .reduce((sum, b) => sum + Number(b.totalCost), 0);
 
-  // Filters bookings based on searches & pills
-  const filteredBookings = bookings.filter(booking => {
-    const statusMatch = bookingFilterStatus === "all" || 
-      (bookingFilterStatus === "pending" && (booking.status === "initiated" || booking.status === "pending")) ||
+  const filteredBookings = bookings.filter((booking) => {
+    const statusMatch =
+      bookingFilterStatus === "all" ||
+      (bookingFilterStatus === "pending" &&
+        (booking.status === "initiated" || booking.status === "pending")) ||
       booking.status === bookingFilterStatus;
 
-    const passengerName = `${booking.user?.firstName || ""} ${booking.user?.lastName || ""}`.toLowerCase();
+    const passengerName =
+      `${booking.user?.firstName || ""} ${booking.user?.lastName || ""}`.toLowerCase();
     const passengerEmail = (booking.user?.email || "").toLowerCase();
     const flightCode = (booking.flight?.flightNumber || "").toLowerCase();
     const searchLower = bookingSearch.toLowerCase();
 
-    const searchMatch = !bookingSearch || 
+    const searchMatch =
+      !bookingSearch ||
       passengerName.includes(searchLower) ||
       passengerEmail.includes(searchLower) ||
       flightCode.includes(searchLower) ||
@@ -322,125 +435,148 @@ export default function AdminDashboardPage() {
     return statusMatch && searchMatch;
   });
 
-  // Date Formatting helper
-  const formatDateTime = (dateStr?: string) => {
-    if (!dateStr) return "-";
-    return new Date(dateStr).toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-  };
-
   if (!authorized) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <RefreshCw className="h-8 w-8 text-forest animate-spin" />
-      </div>
-    );
+    return <LoadingScreen variant="spinner" minHeight="min-h-screen" />;
   }
 
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        
-        {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-forest/10 border border-forest/20 px-3.5 py-1 text-xs font-semibold text-forest mb-2">
               <Shield className="h-3.5 w-3.5" />
               Administrative Workspace
             </div>
-            <h1 className="font-display text-3xl font-extrabold text-ink tracking-tight">Admin Control Portal</h1>
-            <p className="text-sm text-ink/60 mt-1">Manage system bookings, schedules, fleets, and airport hubs from a single dashboard.</p>
+            <h1 className="font-display text-3xl font-extrabold text-ink tracking-tight">
+              Admin Control Portal
+            </h1>
+            <p className="text-sm text-ink/60 mt-1">
+              Manage system bookings, schedules, fleets, and airport hubs from a
+              single dashboard.
+            </p>
           </div>
-          <Button 
-            onClick={fetchData} 
-            variant="outline" 
+          <Button
+            onClick={fetchData}
+            variant="outline"
             className="self-start sm:self-center border-forest/20 text-forest hover:bg-forest/5 flex items-center gap-2 shadow-sm"
           >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             Refresh Portal
           </Button>
         </div>
 
-        {/* Loading Indicator */}
         {loading && bookings.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 bg-white border border-border rounded-2xl shadow-sm">
-            <RefreshCw className="h-8 w-8 text-forest animate-spin mb-4" />
-            <p className="text-ink/60 font-medium text-sm">Initializing system datasets...</p>
-          </div>
+          <LoadingScreen
+            variant="spinner"
+            minHeight="py-20"
+            className="bg-white border border-border rounded-2xl shadow-sm"
+            message="Initializing system datasets..."
+          />
         ) : error ? (
           <div className="p-6 bg-red-50 border border-red-200 text-red-700 rounded-2xl mb-8 flex items-start gap-3">
             <XCircle className="h-5 w-5 shrink-0 mt-0.5" />
             <div>
               <h3 className="font-bold text-sm">Synchronisation Error</h3>
               <p className="text-xs text-red-600 mt-1">{error}</p>
-              <Button onClick={fetchData} size="sm" className="mt-3 bg-red-600 hover:bg-red-700 text-white">Retry Connection</Button>
+              <Button
+                onClick={fetchData}
+                size="sm"
+                className="mt-3 bg-red-600 hover:bg-red-700 text-white"
+              >
+                Retry Connection
+              </Button>
             </div>
           </div>
         ) : (
           <>
-            {/* KPI Cards Row */}
             <div className="grid grid-cols-2 gap-4 md:grid-cols-5 mb-8">
               <Card className="border border-border/80 shadow-sm relative overflow-hidden bg-white group hover:shadow-md transition-all">
                 <CardContent className="p-5">
                   <div className="flex justify-between items-start mb-2">
-                    <span className="text-xs font-semibold text-ink/50 uppercase tracking-wider">Total Bookings</span>
+                    <span className="text-xs font-semibold text-ink/50 uppercase tracking-wider">
+                      Total Bookings
+                    </span>
                     <Ticket className="h-5 w-5 text-forest/70" />
                   </div>
-                  <div className="text-2xl font-extrabold text-ink">{totalBookingsCount}</div>
-                  <p className="text-[10px] text-ink/40 mt-1 font-medium">All requested itineraries</p>
+                  <div className="text-2xl font-extrabold text-ink">
+                    {totalBookingsCount}
+                  </div>
+                  <p className="text-[10px] text-ink/40 mt-1 font-medium">
+                    All requested itineraries
+                  </p>
                 </CardContent>
               </Card>
 
               <Card className="border border-border/80 shadow-sm relative overflow-hidden bg-white group hover:shadow-md transition-all">
                 <CardContent className="p-5">
                   <div className="flex justify-between items-start mb-2">
-                    <span className="text-xs font-semibold text-ink/50 uppercase tracking-wider">Gross Revenue</span>
+                    <span className="text-xs font-semibold text-ink/50 uppercase tracking-wider">
+                      Gross Revenue
+                    </span>
                     <DollarSign className="h-5 w-5 text-emerald-600" />
                   </div>
-                  <div className="text-2xl font-extrabold text-emerald-700">${totalRevenue.toLocaleString()}</div>
-                  <p className="text-[10px] text-ink/40 mt-1 font-medium">From confirmed flights</p>
+                  <div className="text-2xl font-extrabold text-emerald-700">
+                    ${totalRevenue.toLocaleString()}
+                  </div>
+                  <p className="text-[10px] text-ink/40 mt-1 font-medium">
+                    From confirmed flights
+                  </p>
                 </CardContent>
               </Card>
 
               <Card className="border border-border/80 shadow-sm relative overflow-hidden bg-white group hover:shadow-md transition-all">
                 <CardContent className="p-5">
                   <div className="flex justify-between items-start mb-2">
-                    <span className="text-xs font-semibold text-ink/50 uppercase tracking-wider">Confirmed</span>
+                    <span className="text-xs font-semibold text-ink/50 uppercase tracking-wider">
+                      Confirmed
+                    </span>
                     <CheckCircle2 className="h-5 w-5 text-forest" />
                   </div>
-                  <div className="text-2xl font-extrabold text-forest">{confirmedBookingsCount}</div>
-                  <p className="text-[10px] text-ink/40 mt-1 font-medium">Fully booked ticket seats</p>
+                  <div className="text-2xl font-extrabold text-forest">
+                    {confirmedBookingsCount}
+                  </div>
+                  <p className="text-[10px] text-ink/40 mt-1 font-medium">
+                    Fully booked ticket seats
+                  </p>
                 </CardContent>
               </Card>
 
               <Card className="border border-border/80 shadow-sm relative overflow-hidden bg-white group hover:shadow-md transition-all">
                 <CardContent className="p-5">
                   <div className="flex justify-between items-start mb-2">
-                    <span className="text-xs font-semibold text-ink/50 uppercase tracking-wider">Pending/Initiated</span>
+                    <span className="text-xs font-semibold text-ink/50 uppercase tracking-wider">
+                      Pending/Initiated
+                    </span>
                     <Clock className="h-5 w-5 text-amber-500" />
                   </div>
-                  <div className="text-2xl font-extrabold text-amber-600">{pendingBookingsCount}</div>
-                  <p className="text-[10px] text-ink/40 mt-1 font-medium">Awaiting manual approval</p>
+                  <div className="text-2xl font-extrabold text-amber-600">
+                    {pendingBookingsCount}
+                  </div>
+                  <p className="text-[10px] text-ink/40 mt-1 font-medium">
+                    Awaiting manual approval
+                  </p>
                 </CardContent>
               </Card>
 
               <Card className="border border-border/80 shadow-sm relative overflow-hidden bg-white group hover:shadow-md transition-all">
                 <CardContent className="p-5">
                   <div className="flex justify-between items-start mb-2">
-                    <span className="text-xs font-semibold text-ink/50 uppercase tracking-wider">Cancelled</span>
+                    <span className="text-xs font-semibold text-ink/50 uppercase tracking-wider">
+                      Cancelled
+                    </span>
                     <XCircle className="h-5 w-5 text-red-500" />
                   </div>
-                  <div className="text-2xl font-extrabold text-red-600">{cancelledBookingsCount}</div>
-                  <p className="text-[10px] text-ink/40 mt-1 font-medium">Void itineraries</p>
+                  <div className="text-2xl font-extrabold text-red-600">
+                    {cancelledBookingsCount}
+                  </div>
+                  <p className="text-[10px] text-ink/40 mt-1 font-medium">
+                    Void itineraries
+                  </p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Glassmorphic Multi-tab Bar */}
             <div className="flex border-b border-border mb-6 overflow-x-auto scrollbar-none gap-2">
               <button
                 onClick={() => setActiveTab("bookings")}
@@ -488,10 +624,8 @@ export default function AdminDashboardPage() {
               </button>
             </div>
 
-            {/* TAB CONTENT: BOOKINGS */}
             {activeTab === "bookings" && (
               <div className="space-y-6">
-                {/* Search & Filters */}
                 <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-2xl border border-border shadow-sm">
                   <div className="relative w-full md:w-96">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ink/40" />
@@ -509,7 +643,7 @@ export default function AdminDashboardPage() {
                       { value: "all", label: "All Bookings" },
                       { value: "pending", label: "Pending Approval" },
                       { value: "booked", label: "Confirmed" },
-                      { value: "cancelled", label: "Cancelled" }
+                      { value: "cancelled", label: "Cancelled" },
                     ].map((pill) => (
                       <button
                         key={pill.value}
@@ -526,69 +660,109 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                {/* Table list */}
                 <Card className="border border-border shadow-sm overflow-hidden bg-white">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-slate-50 border-b border-border">
-                          <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-ink/60">ID / Ref</th>
-                          <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-ink/60">Passenger</th>
-                          <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-ink/60">Itinerary</th>
-                          <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-ink/60">Seats & Price</th>
-                          <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-ink/60">Status</th>
-                          <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-ink/60 text-right">Actions</th>
+                          <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-ink/60">
+                            ID / Ref
+                          </th>
+                          <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-ink/60">
+                            Passenger
+                          </th>
+                          <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-ink/60">
+                            Itinerary
+                          </th>
+                          <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-ink/60">
+                            Seats & Price
+                          </th>
+                          <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-ink/60">
+                            Status
+                          </th>
+                          <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-ink/60 text-right">
+                            Actions
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/60">
                         {filteredBookings.length === 0 ? (
                           <tr>
-                            <td colSpan={6} className="text-center py-12 text-ink/40 text-sm font-medium">
+                            <td
+                              colSpan={6}
+                              className="text-center py-12 text-ink/40 text-sm font-medium"
+                            >
                               No matching passenger bookings found.
                             </td>
                           </tr>
                         ) : (
                           filteredBookings.map((booking) => {
-                            const isPending = booking.status === "initiated" || booking.status === "pending";
+                            const isPending =
+                              booking.status === "initiated" ||
+                              booking.status === "pending";
                             const isConfirmed = booking.status === "booked";
                             const isCancelled = booking.status === "cancelled";
 
                             return (
-                              <tr key={booking.id} className="hover:bg-slate-50/50 transition-colors">
+                              <tr
+                                key={booking.id}
+                                className="hover:bg-slate-50/50 transition-colors"
+                              >
                                 <td className="py-5 px-6 font-display font-bold text-ink">
                                   #{booking.id}
                                   <div className="text-[10px] font-sans font-normal text-ink/40 mt-1">
-                                    {new Date(booking.createdAt).toLocaleDateString()}
+                                    {new Date(
+                                      booking.createdAt,
+                                    ).toLocaleDateString()}
                                   </div>
                                 </td>
                                 <td className="py-5 px-6">
                                   <div className="font-semibold text-ink text-sm">
-                                    {booking.user ? `${booking.user.firstName} ${booking.user.lastName || ""}`.trim() : "System User"}
+                                    {booking.user
+                                      ? `${booking.user.firstName} ${booking.user.lastName || ""}`.trim()
+                                      : "System User"}
                                   </div>
-                                  <div className="text-xs text-ink/50 font-normal mt-0.5">{booking.user?.email || `User ID: ${booking.userId}`}</div>
+                                  <div className="text-xs text-ink/50 font-normal mt-0.5">
+                                    {booking.user?.email ||
+                                      `User ID: ${booking.userId}`}
+                                  </div>
                                 </td>
                                 <td className="py-5 px-6">
                                   {booking.flight ? (
                                     <div>
                                       <div className="flex items-center gap-1.5 text-sm font-bold text-ink font-display">
-                                        <span>{booking.flight.departureAirportId}</span>
+                                        <span>
+                                          {booking.flight.departureAirportId}
+                                        </span>
                                         <ChevronRight className="h-3.5 w-3.5 text-ink/30" />
-                                        <span>{booking.flight.arrivalAirportId}</span>
+                                        <span>
+                                          {booking.flight.arrivalAirportId}
+                                        </span>
                                         <Badge className="ml-2 bg-mint/45 text-forest font-semibold text-[10px] hover:bg-mint/45 px-1.5 border border-forest/15">
                                           {booking.flight.flightNumber}
                                         </Badge>
                                       </div>
                                       <div className="text-[10px] text-ink/45 mt-1 font-sans">
-                                        Departure: {formatDateTime(booking.flight.departureTime)}
+                                        Departure:{" "}
+                                        {formatDateTime(
+                                          booking.flight.departureTime,
+                                        )}
                                       </div>
                                     </div>
                                   ) : (
-                                    <span className="text-red-500 text-xs">Itinerary Removed (ID: {booking.flightId})</span>
+                                    <span className="text-red-500 text-xs">
+                                      Itinerary Removed (ID: {booking.flightId})
+                                    </span>
                                   )}
                                 </td>
                                 <td className="py-5 px-6">
-                                  <div className="font-semibold text-sm text-ink">{booking.noOfSeats} {booking.noOfSeats === 1 ? 'Seat' : 'Seats'}</div>
-                                  <div className="text-xs text-emerald-700 font-bold mt-0.5">${booking.totalCost}</div>
+                                  <div className="font-semibold text-sm text-ink">
+                                    {booking.noOfSeats}{" "}
+                                    {booking.noOfSeats === 1 ? "Seat" : "Seats"}
+                                  </div>
+                                  <div className="text-xs text-emerald-700 font-bold mt-0.5">
+                                    ${booking.totalCost}
+                                  </div>
                                 </td>
                                 <td className="py-5 px-6">
                                   {isConfirmed && (
@@ -612,7 +786,9 @@ export default function AdminDashboardPage() {
                                     <Button
                                       size="sm"
                                       disabled={actionLoading === booking.id}
-                                      onClick={() => handleConfirmBooking(booking.id)}
+                                      onClick={() =>
+                                        handleConfirmBooking(booking.id)
+                                      }
                                       className="bg-forest hover:bg-forest-light text-white text-xs py-1 h-8 font-semibold shadow-sm"
                                     >
                                       Confirm Booking
@@ -623,7 +799,9 @@ export default function AdminDashboardPage() {
                                       size="sm"
                                       variant="outline"
                                       disabled={actionLoading === booking.id}
-                                      onClick={() => handleCancelBooking(booking.id)}
+                                      onClick={() =>
+                                        handleCancelBooking(booking.id)
+                                      }
                                       className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 text-xs py-1 h-8 font-semibold"
                                     >
                                       Cancel
@@ -633,7 +811,9 @@ export default function AdminDashboardPage() {
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      onClick={() => handleDownloadTicket(booking.id)}
+                                      onClick={() =>
+                                        handleDownloadTicket(booking.id)
+                                      }
                                       className="text-forest hover:bg-forest/5 hover:text-forest text-xs py-1 h-8 font-semibold"
                                     >
                                       <Download className="h-4.5 w-4.5 mr-1" />
@@ -657,8 +837,13 @@ export default function AdminDashboardPage() {
               <div className="space-y-6">
                 {/* Form Trigger Modal */}
                 <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-border shadow-sm">
-                  <span className="text-sm font-semibold text-ink/70">Scheduled Flight Log ({flights.length} active routes)</span>
-                  <Dialog open={isFlightModalOpen} onOpenChange={setIsFlightModalOpen}>
+                  <span className="text-sm font-semibold text-ink/70">
+                    Scheduled Flight Log ({flights.length} active routes)
+                  </span>
+                  <Dialog
+                    open={isFlightModalOpen}
+                    onOpenChange={setIsFlightModalOpen}
+                  >
                     <DialogTrigger
                       render={
                         <Button className="bg-forest hover:bg-forest-light text-white font-semibold text-sm shadow-sm flex items-center gap-2">
@@ -670,30 +855,45 @@ export default function AdminDashboardPage() {
                     <DialogContent className="sm:max-w-[500px] border border-border bg-white rounded-2xl">
                       <form onSubmit={handleCreateFlight}>
                         <DialogHeader>
-                          <DialogTitle className="font-display font-extrabold text-xl text-ink">Schedule New Flight</DialogTitle>
-                          <DialogDescription className="text-ink/50 text-xs">Configure airplane capacity, routing hub, and pricing parameters.</DialogDescription>
+                          <DialogTitle className="font-display font-extrabold text-xl text-ink">
+                            Schedule New Flight
+                          </DialogTitle>
+                          <DialogDescription className="text-ink/50 text-xs">
+                            Configure airplane capacity, routing hub, and
+                            pricing parameters.
+                          </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 py-4">
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                              <label className="text-xs font-bold text-ink/70">Flight Number</label>
-                              <Input 
-                                placeholder="e.g. AI-302" 
-                                value={flightNumber} 
-                                onChange={e => setFlightNumber(e.target.value)} 
-                                className="border-border text-sm" 
+                              <label className="text-xs font-bold text-ink/70">
+                                Flight Number
+                              </label>
+                              <Input
+                                placeholder="e.g. AI-302"
+                                value={flightNumber}
+                                onChange={(e) =>
+                                  setFlightNumber(e.target.value)
+                                }
+                                className="border-border text-sm"
                               />
                             </div>
                             <div className="space-y-1.5">
-                              <label className="text-xs font-bold text-ink/70">Select Airplane Fleet</label>
-                              <select 
-                                value={selectedAirplaneId} 
-                                onChange={e => setSelectedAirplaneId(e.target.value)}
+                              <label className="text-xs font-bold text-ink/70">
+                                Select Airplane Fleet
+                              </label>
+                              <select
+                                value={selectedAirplaneId}
+                                onChange={(e) =>
+                                  setSelectedAirplaneId(e.target.value)
+                                }
                                 className="w-full rounded-md border border-border bg-white py-2.5 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-forest"
                               >
                                 <option value="">Select airplane...</option>
-                                {airplanes.map(a => (
-                                  <option key={a.id} value={a.id}>{a.modelNumber} (Cap: {a.capacity})</option>
+                                {airplanes.map((a) => (
+                                  <option key={a.id} value={a.id}>
+                                    {a.modelNumber} (Cap: {a.capacity})
+                                  </option>
                                 ))}
                               </select>
                             </div>
@@ -701,28 +901,40 @@ export default function AdminDashboardPage() {
 
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                              <label className="text-xs font-bold text-ink/70">Departure Airport</label>
-                              <select 
-                                value={departureAirportId} 
-                                onChange={e => setDepartureAirportId(e.target.value)}
+                              <label className="text-xs font-bold text-ink/70">
+                                Departure Airport
+                              </label>
+                              <select
+                                value={departureAirportId}
+                                onChange={(e) =>
+                                  setDepartureAirportId(e.target.value)
+                                }
                                 className="w-full rounded-md border border-border bg-white py-2.5 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-forest"
                               >
                                 <option value="">Select departure...</option>
-                                {airports.map(a => (
-                                  <option key={a.id} value={a.code}>{a.code} - {a.name}</option>
+                                {airports.map((a) => (
+                                  <option key={a.id} value={a.code}>
+                                    {a.code} - {a.name}
+                                  </option>
                                 ))}
                               </select>
                             </div>
                             <div className="space-y-1.5">
-                              <label className="text-xs font-bold text-ink/70">Arrival Airport</label>
-                              <select 
-                                value={arrivalAirportId} 
-                                onChange={e => setArrivalAirportId(e.target.value)}
+                              <label className="text-xs font-bold text-ink/70">
+                                Arrival Airport
+                              </label>
+                              <select
+                                value={arrivalAirportId}
+                                onChange={(e) =>
+                                  setArrivalAirportId(e.target.value)
+                                }
                                 className="w-full rounded-md border border-border bg-white py-2.5 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-forest"
                               >
                                 <option value="">Select arrival...</option>
-                                {airports.map(a => (
-                                  <option key={a.id} value={a.code}>{a.code} - {a.name}</option>
+                                {airports.map((a) => (
+                                  <option key={a.id} value={a.code}>
+                                    {a.code} - {a.name}
+                                  </option>
                                 ))}
                               </select>
                             </div>
@@ -730,53 +942,76 @@ export default function AdminDashboardPage() {
 
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                              <label className="text-xs font-bold text-ink/70">Departure Time</label>
-                              <Input 
-                                type="datetime-local" 
-                                value={departureTime} 
-                                onChange={e => setDepartureTime(e.target.value)} 
-                                className="border-border text-sm" 
+                              <label className="text-xs font-bold text-ink/70">
+                                Departure Time
+                              </label>
+                              <Input
+                                type="datetime-local"
+                                value={departureTime}
+                                onChange={(e) =>
+                                  setDepartureTime(e.target.value)
+                                }
+                                className="border-border text-sm"
                               />
                             </div>
                             <div className="space-y-1.5">
-                              <label className="text-xs font-bold text-ink/70">Arrival Time</label>
-                              <Input 
-                                type="datetime-local" 
-                                value={arrivalTime} 
-                                onChange={e => setArrivalTime(e.target.value)} 
-                                className="border-border text-sm" 
+                              <label className="text-xs font-bold text-ink/70">
+                                Arrival Time
+                              </label>
+                              <Input
+                                type="datetime-local"
+                                value={arrivalTime}
+                                onChange={(e) => setArrivalTime(e.target.value)}
+                                className="border-border text-sm"
                               />
                             </div>
                           </div>
 
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                              <label className="text-xs font-bold text-ink/70">Seat Fare Price ($ USD)</label>
-                              <Input 
-                                type="number" 
-                                placeholder="Price" 
-                                value={price} 
-                                onChange={e => setPrice(e.target.value)} 
-                                className="border-border text-sm" 
+                              <label className="text-xs font-bold text-ink/70">
+                                Seat Fare Price ($ USD)
+                              </label>
+                              <Input
+                                type="number"
+                                placeholder="Price"
+                                value={price}
+                                onChange={(e) => setPrice(e.target.value)}
+                                className="border-border text-sm"
                               />
                             </div>
                             <div className="space-y-1.5">
-                              <label className="text-xs font-bold text-ink/70">Seat Capacity</label>
-                              <Input 
-                                type="number" 
-                                placeholder="Total Seats" 
-                                value={totalSeats} 
-                                onChange={e => setTotalSeats(e.target.value)} 
-                                className="border-border text-sm" 
+                              <label className="text-xs font-bold text-ink/70">
+                                Seat Capacity
+                              </label>
+                              <Input
+                                type="number"
+                                placeholder="Total Seats"
+                                value={totalSeats}
+                                onChange={(e) => setTotalSeats(e.target.value)}
+                                className="border-border text-sm"
                                 disabled
                               />
-                              <p className="text-[9px] text-ink/40">Matches airplane fleet limit</p>
+                              <p className="text-[9px] text-ink/40">
+                                Matches airplane fleet limit
+                              </p>
                             </div>
                           </div>
                         </div>
                         <DialogFooter className="mt-4 border-t border-border pt-4 gap-2 sm:gap-0">
-                          <Button type="button" variant="outline" onClick={() => setIsFlightModalOpen(false)}>Cancel</Button>
-                          <Button type="submit" className="bg-forest hover:bg-forest-light text-white font-semibold">Publish Schedule</Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setIsFlightModalOpen(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="submit"
+                            className="bg-forest hover:bg-forest-light text-white font-semibold"
+                          >
+                            Publish Schedule
+                          </Button>
                         </DialogFooter>
                       </form>
                     </DialogContent>
@@ -790,27 +1025,40 @@ export default function AdminDashboardPage() {
                       No active flight itineraries recorded.
                     </div>
                   ) : (
-                    flights.map(f => (
-                      <Card key={f.id} className="border border-border/80 shadow-sm bg-white overflow-hidden group hover:border-forest/35 hover:shadow-md transition-all">
+                    flights.map((f) => (
+                      <Card
+                        key={f.id}
+                        className="border border-border/80 shadow-sm bg-white overflow-hidden group hover:border-forest/35 hover:shadow-md transition-all"
+                      >
                         <CardHeader className="bg-slate-50/50 p-4 border-b border-border/40">
                           <div className="flex justify-between items-center">
                             <div className="flex items-center gap-1 bg-mint/45 text-forest border border-forest/15 px-2.5 py-0.5 rounded-full text-xs font-bold font-display">
                               <Plane className="h-3 w-3 shrink-0" />
                               {f.flightNumber}
                             </div>
-                            <span className="text-sm font-extrabold text-emerald-700">${f.price}</span>
+                            <span className="text-sm font-extrabold text-emerald-700">
+                              ${f.price}
+                            </span>
                           </div>
                         </CardHeader>
                         <CardContent className="p-5 space-y-4">
                           <div className="flex justify-between items-center">
                             <div>
-                              <div className="text-lg font-bold font-display text-ink">{f.departureAirportId}</div>
-                              <div className="text-[10px] text-ink/50 font-medium">Departure Airport</div>
+                              <div className="text-lg font-bold font-display text-ink">
+                                {f.departureAirportId}
+                              </div>
+                              <div className="text-[10px] text-ink/50 font-medium">
+                                Departure Airport
+                              </div>
                             </div>
                             <ChevronRight className="h-5 w-5 text-ink/30" />
                             <div className="text-right">
-                              <div className="text-lg font-bold font-display text-ink">{f.arrivalAirportId}</div>
-                              <div className="text-[10px] text-ink/50 font-medium">Arrival Airport</div>
+                              <div className="text-lg font-bold font-display text-ink">
+                                {f.arrivalAirportId}
+                              </div>
+                              <div className="text-[10px] text-ink/50 font-medium">
+                                Arrival Airport
+                              </div>
                             </div>
                           </div>
 
@@ -818,12 +1066,20 @@ export default function AdminDashboardPage() {
 
                           <div className="grid grid-cols-2 gap-4 text-xs">
                             <div>
-                              <div className="text-ink/40 font-medium mb-0.5">Departing Time</div>
-                              <div className="font-semibold text-ink">{formatDateTime(f.departureTime)}</div>
+                              <div className="text-ink/40 font-medium mb-0.5">
+                                Departing Time
+                              </div>
+                              <div className="font-semibold text-ink">
+                                {formatDateTime(f.departureTime)}
+                              </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-ink/40 font-medium mb-0.5">Arriving Time</div>
-                              <div className="font-semibold text-ink">{formatDateTime(f.arrivalTime)}</div>
+                              <div className="text-ink/40 font-medium mb-0.5">
+                                Arriving Time
+                              </div>
+                              <div className="font-semibold text-ink">
+                                {formatDateTime(f.arrivalTime)}
+                              </div>
                             </div>
                           </div>
 
@@ -831,10 +1087,17 @@ export default function AdminDashboardPage() {
 
                           <div className="flex justify-between items-center text-xs">
                             <div className="text-ink/55">
-                              Fleet: <span className="font-bold text-ink">{f.Airplane?.modelNumber || `ID: ${f.airplaneId}`}</span>
+                              Fleet:{" "}
+                              <span className="font-bold text-ink">
+                                {f.Airplane?.modelNumber ||
+                                  `ID: ${f.airplaneId}`}
+                              </span>
                             </div>
                             <div className="text-ink/55">
-                              Seats Capacity: <span className="font-bold text-ink">{f.totalSeats}</span>
+                              Seats Capacity:{" "}
+                              <span className="font-bold text-ink">
+                                {f.totalSeats}
+                              </span>
                             </div>
                           </div>
                         </CardContent>
@@ -848,7 +1111,6 @@ export default function AdminDashboardPage() {
             {/* TAB CONTENT: AIRPLANES & AIRPORTS */}
             {activeTab === "airplanes-airports" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                
                 {/* Airplane column */}
                 <div className="space-y-4">
                   <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-border shadow-sm">
@@ -857,13 +1119,21 @@ export default function AdminDashboardPage() {
                         <Plane className="h-4.5 w-4.5 text-forest" />
                         Airplane Fleets
                       </h3>
-                      <p className="text-[10px] text-ink/40">Total Registered: {airplanes.length}</p>
+                      <p className="text-[10px] text-ink/40">
+                        Total Registered: {airplanes.length}
+                      </p>
                     </div>
 
-                    <Dialog open={isAirplaneModalOpen} onOpenChange={setIsAirplaneModalOpen}>
+                    <Dialog
+                      open={isAirplaneModalOpen}
+                      onOpenChange={setIsAirplaneModalOpen}
+                    >
                       <DialogTrigger
                         render={
-                          <Button size="sm" className="bg-forest hover:bg-forest-light text-white font-semibold text-xs shadow-sm flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            className="bg-forest hover:bg-forest-light text-white font-semibold text-xs shadow-sm flex items-center gap-1"
+                          >
                             <Plus className="h-3.5 w-3.5" />
                             Add Fleet
                           </Button>
@@ -872,33 +1142,59 @@ export default function AdminDashboardPage() {
                       <DialogContent className="sm:max-w-[400px] border border-border bg-white rounded-2xl">
                         <form onSubmit={handleCreateAirplane}>
                           <DialogHeader>
-                            <DialogTitle className="font-display font-extrabold text-xl text-ink">Register Fleet Airplane</DialogTitle>
-                            <DialogDescription className="text-ink/50 text-xs">Input details to register a new airplane in the fleet.</DialogDescription>
+                            <DialogTitle className="font-display font-extrabold text-xl text-ink">
+                              Register Fleet Airplane
+                            </DialogTitle>
+                            <DialogDescription className="text-ink/50 text-xs">
+                              Input details to register a new airplane in the
+                              fleet.
+                            </DialogDescription>
                           </DialogHeader>
                           <div className="space-y-4 py-4">
                             <div className="space-y-1.5">
-                              <label className="text-xs font-bold text-ink/70">Model Number</label>
-                              <Input 
-                                placeholder="e.g. Boeing 777-300ER" 
-                                value={airplaneModel} 
-                                onChange={e => setAirplaneModel(e.target.value)} 
-                                className="border-border text-sm" 
+                              <label className="text-xs font-bold text-ink/70">
+                                Model Number
+                              </label>
+                              <Input
+                                placeholder="e.g. Boeing 777-300ER"
+                                value={airplaneModel}
+                                onChange={(e) =>
+                                  setAirplaneModel(e.target.value)
+                                }
+                                className="border-border text-sm"
                               />
                             </div>
                             <div className="space-y-1.5">
-                              <label className="text-xs font-bold text-ink/70">Capacity Limit (Seats)</label>
-                              <Input 
+                              <label className="text-xs font-bold text-ink/70">
+                                Capacity Limit (Seats)
+                              </label>
+                              <Input
                                 type="number"
-                                placeholder="e.g. 280" 
-                                value={airplaneCapacity} 
-                                onChange={e => setAirplaneCapacity(e.target.value)} 
-                                className="border-border text-sm" 
+                                placeholder="e.g. 280"
+                                value={airplaneCapacity}
+                                onChange={(e) =>
+                                  setAirplaneCapacity(e.target.value)
+                                }
+                                className="border-border text-sm"
                               />
                             </div>
                           </div>
                           <DialogFooter className="mt-4 border-t border-border pt-4 gap-2 sm:gap-0">
-                            <Button type="button" variant="outline" size="sm" onClick={() => setIsAirplaneModalOpen(false)}>Cancel</Button>
-                            <Button type="submit" size="sm" className="bg-forest hover:bg-forest-light text-white font-semibold">Register Fleet</Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setIsAirplaneModalOpen(false)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              type="submit"
+                              size="sm"
+                              className="bg-forest hover:bg-forest-light text-white font-semibold"
+                            >
+                              Register Fleet
+                            </Button>
                           </DialogFooter>
                         </form>
                       </DialogContent>
@@ -908,13 +1204,22 @@ export default function AdminDashboardPage() {
                   <Card className="border border-border shadow-sm bg-white overflow-hidden">
                     <div className="divide-y divide-border/60 max-h-[500px] overflow-y-auto">
                       {airplanes.length === 0 ? (
-                        <div className="p-6 text-center text-ink/40 text-xs">No registered airplanes found.</div>
+                        <div className="p-6 text-center text-ink/40 text-xs">
+                          No registered airplanes found.
+                        </div>
                       ) : (
-                        airplanes.map(a => (
-                          <div key={a.id} className="p-4 flex justify-between items-center hover:bg-slate-50/40">
+                        airplanes.map((a) => (
+                          <div
+                            key={a.id}
+                            className="p-4 flex justify-between items-center hover:bg-slate-50/40"
+                          >
                             <div>
-                              <div className="text-sm font-bold text-ink font-display">{a.modelNumber}</div>
-                              <div className="text-[10px] text-ink/45 mt-0.5">Fleet Identifier ID: #{a.id}</div>
+                              <div className="text-sm font-bold text-ink font-display">
+                                {a.modelNumber}
+                              </div>
+                              <div className="text-[10px] text-ink/45 mt-0.5">
+                                Fleet Identifier ID: #{a.id}
+                              </div>
                             </div>
                             <Badge className="bg-forest/10 border border-forest/15 text-forest text-xs font-bold px-2 py-0.5 rounded-full">
                               {a.capacity} Seats
@@ -934,13 +1239,21 @@ export default function AdminDashboardPage() {
                         <Building2 className="h-4.5 w-4.5 text-forest" />
                         Airport Hubs
                       </h3>
-                      <p className="text-[10px] text-ink/40">Total Hubs: {airports.length}</p>
+                      <p className="text-[10px] text-ink/40">
+                        Total Hubs: {airports.length}
+                      </p>
                     </div>
 
-                    <Dialog open={isAirportModalOpen} onOpenChange={setIsAirportModalOpen}>
+                    <Dialog
+                      open={isAirportModalOpen}
+                      onOpenChange={setIsAirportModalOpen}
+                    >
                       <DialogTrigger
                         render={
-                          <Button size="sm" className="bg-forest hover:bg-forest-light text-white font-semibold text-xs shadow-sm flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            className="bg-forest hover:bg-forest-light text-white font-semibold text-xs shadow-sm flex items-center gap-1"
+                          >
                             <Plus className="h-3.5 w-3.5" />
                             Add Hub
                           </Button>
@@ -949,59 +1262,94 @@ export default function AdminDashboardPage() {
                       <DialogContent className="sm:max-w-[400px] border border-border bg-white rounded-2xl">
                         <form onSubmit={handleCreateAirport}>
                           <DialogHeader>
-                            <DialogTitle className="font-display font-extrabold text-xl text-ink">Register Airport Hub</DialogTitle>
-                            <DialogDescription className="text-ink/50 text-xs">Register a new departure or arrival airport hub.</DialogDescription>
+                            <DialogTitle className="font-display font-extrabold text-xl text-ink">
+                              Register Airport Hub
+                            </DialogTitle>
+                            <DialogDescription className="text-ink/50 text-xs">
+                              Register a new departure or arrival airport hub.
+                            </DialogDescription>
                           </DialogHeader>
                           <div className="space-y-4 py-4">
                             <div className="grid grid-cols-3 gap-3">
                               <div className="col-span-2 space-y-1.5">
-                                <label className="text-xs font-bold text-ink/70">Airport Name</label>
-                                <Input 
-                                  placeholder="e.g. Heathrow Airport" 
-                                  value={airportName} 
-                                  onChange={e => setAirportName(e.target.value)} 
-                                  className="border-border text-sm" 
+                                <label className="text-xs font-bold text-ink/70">
+                                  Airport Name
+                                </label>
+                                <Input
+                                  placeholder="e.g. Heathrow Airport"
+                                  value={airportName}
+                                  onChange={(e) =>
+                                    setAirportName(e.target.value)
+                                  }
+                                  className="border-border text-sm"
                                 />
                               </div>
                               <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-ink/70">3-Code</label>
-                                <Input 
-                                  placeholder="LHR" 
+                                <label className="text-xs font-bold text-ink/70">
+                                  3-Code
+                                </label>
+                                <Input
+                                  placeholder="LHR"
                                   maxLength={3}
-                                  value={airportCode} 
-                                  onChange={e => setAirportCode(e.target.value)} 
-                                  className="border-border text-sm uppercase" 
+                                  value={airportCode}
+                                  onChange={(e) =>
+                                    setAirportCode(e.target.value)
+                                  }
+                                  className="border-border text-sm uppercase"
                                 />
                               </div>
                             </div>
 
                             <div className="space-y-1.5">
-                              <label className="text-xs font-bold text-ink/70">Select Hub City</label>
-                              <select 
-                                value={airportCityId} 
-                                onChange={e => setAirportCityId(e.target.value)}
+                              <label className="text-xs font-bold text-ink/70">
+                                Select Hub City
+                              </label>
+                              <select
+                                value={airportCityId}
+                                onChange={(e) =>
+                                  setAirportCityId(e.target.value)
+                                }
                                 className="w-full rounded-md border border-border bg-white py-2.5 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-forest"
                               >
                                 <option value="">Select city...</option>
-                                {cities.map(c => (
-                                  <option key={c.id} value={c.id}>{c.name}</option>
+                                {cities.map((c) => (
+                                  <option key={c.id} value={c.id}>
+                                    {c.name}
+                                  </option>
                                 ))}
                               </select>
                             </div>
 
                             <div className="space-y-1.5">
-                              <label className="text-xs font-bold text-ink/70">Physical Address (Optional)</label>
-                              <Input 
-                                placeholder="e.g. Hounslow, Greater London" 
-                                value={airportAddress} 
-                                onChange={e => setAirportAddress(e.target.value)} 
-                                className="border-border text-sm" 
+                              <label className="text-xs font-bold text-ink/70">
+                                Physical Address (Optional)
+                              </label>
+                              <Input
+                                placeholder="e.g. Hounslow, Greater London"
+                                value={airportAddress}
+                                onChange={(e) =>
+                                  setAirportAddress(e.target.value)
+                                }
+                                className="border-border text-sm"
                               />
                             </div>
                           </div>
                           <DialogFooter className="mt-4 border-t border-border pt-4 gap-2 sm:gap-0">
-                            <Button type="button" variant="outline" size="sm" onClick={() => setIsAirportModalOpen(false)}>Cancel</Button>
-                            <Button type="submit" size="sm" className="bg-forest hover:bg-forest-light text-white font-semibold">Register Hub</Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setIsAirportModalOpen(false)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              type="submit"
+                              size="sm"
+                              className="bg-forest hover:bg-forest-light text-white font-semibold"
+                            >
+                              Register Hub
+                            </Button>
                           </DialogFooter>
                         </form>
                       </DialogContent>
@@ -1011,13 +1359,24 @@ export default function AdminDashboardPage() {
                   <Card className="border border-border shadow-sm bg-white overflow-hidden">
                     <div className="divide-y divide-border/60 max-h-[500px] overflow-y-auto">
                       {airports.length === 0 ? (
-                        <div className="p-6 text-center text-ink/40 text-xs">No registered airport hubs found.</div>
+                        <div className="p-6 text-center text-ink/40 text-xs">
+                          No registered airport hubs found.
+                        </div>
                       ) : (
-                        airports.map(a => (
-                          <div key={a.id} className="p-4 flex justify-between items-center hover:bg-slate-50/40">
+                        airports.map((a) => (
+                          <div
+                            key={a.id}
+                            className="p-4 flex justify-between items-center hover:bg-slate-50/40"
+                          >
                             <div>
-                              <div className="text-sm font-bold text-ink font-display">{a.name}</div>
-                              <div className="text-[10px] text-ink/45 mt-0.5">Region City: {a.City?.name || `City ID: ${a.cityId}`} {a.address && `| ${a.address}`}</div>
+                              <div className="text-sm font-bold text-ink font-display">
+                                {a.name}
+                              </div>
+                              <div className="text-[10px] text-ink/45 mt-0.5">
+                                Region City:{" "}
+                                {a.City?.name || `City ID: ${a.cityId}`}{" "}
+                                {a.address && `| ${a.address}`}
+                              </div>
                             </div>
                             <Badge className="bg-mint/40 border border-forest/15 text-forest text-xs font-bold px-2 py-0.5 rounded-full font-display">
                               {a.code}
@@ -1028,11 +1387,9 @@ export default function AdminDashboardPage() {
                     </div>
                   </Card>
                 </div>
-
               </div>
             )}
 
-            {/* TAB CONTENT: CITIES */}
             {activeTab === "cities" && (
               <div className="space-y-4 max-w-xl mx-auto">
                 <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-border shadow-sm">
@@ -1041,13 +1398,21 @@ export default function AdminDashboardPage() {
                       <MapPin className="h-4.5 w-4.5 text-forest" />
                       Supported Regions / Cities
                     </h3>
-                    <p className="text-[10px] text-ink/40">Active coverage: {cities.length} global regions</p>
+                    <p className="text-[10px] text-ink/40">
+                      Active coverage: {cities.length} global regions
+                    </p>
                   </div>
 
-                  <Dialog open={isCityModalOpen} onOpenChange={setIsCityModalOpen}>
+                  <Dialog
+                    open={isCityModalOpen}
+                    onOpenChange={setIsCityModalOpen}
+                  >
                     <DialogTrigger
                       render={
-                        <Button size="sm" className="bg-forest hover:bg-forest-light text-white font-semibold text-xs shadow-sm flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          className="bg-forest hover:bg-forest-light text-white font-semibold text-xs shadow-sm flex items-center gap-1"
+                        >
                           <Plus className="h-3.5 w-3.5" />
                           Add City
                         </Button>
@@ -1056,23 +1421,42 @@ export default function AdminDashboardPage() {
                     <DialogContent className="sm:max-w-[400px] border border-border bg-white rounded-2xl">
                       <form onSubmit={handleCreateCity}>
                         <DialogHeader>
-                          <DialogTitle className="font-display font-extrabold text-xl text-ink">Register Target City</DialogTitle>
-                          <DialogDescription className="text-ink/50 text-xs">Enter name to open new travel regions.</DialogDescription>
+                          <DialogTitle className="font-display font-extrabold text-xl text-ink">
+                            Register Target City
+                          </DialogTitle>
+                          <DialogDescription className="text-ink/50 text-xs">
+                            Enter name to open new travel regions.
+                          </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 py-4">
                           <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-ink/70">City Name</label>
-                            <Input 
-                              placeholder="e.g. London" 
-                              value={cityName} 
-                              onChange={e => setCityName(e.target.value)} 
-                              className="border-border text-sm" 
+                            <label className="text-xs font-bold text-ink/70">
+                              City Name
+                            </label>
+                            <Input
+                              placeholder="e.g. London"
+                              value={cityName}
+                              onChange={(e) => setCityName(e.target.value)}
+                              className="border-border text-sm"
                             />
                           </div>
                         </div>
                         <DialogFooter className="mt-4 border-t border-border pt-4 gap-2 sm:gap-0">
-                          <Button type="button" variant="outline" size="sm" onClick={() => setIsCityModalOpen(false)}>Cancel</Button>
-                          <Button type="submit" size="sm" className="bg-forest hover:bg-forest-light text-white font-semibold">Add City</Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsCityModalOpen(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="submit"
+                            size="sm"
+                            className="bg-forest hover:bg-forest-light text-white font-semibold"
+                          >
+                            Add City
+                          </Button>
                         </DialogFooter>
                       </form>
                     </DialogContent>
@@ -1082,14 +1466,23 @@ export default function AdminDashboardPage() {
                 <Card className="border border-border shadow-sm bg-white overflow-hidden">
                   <div className="divide-y divide-border/60">
                     {cities.length === 0 ? (
-                      <div className="p-6 text-center text-ink/40 text-xs">No coverage cities found.</div>
+                      <div className="p-6 text-center text-ink/40 text-xs">
+                        No coverage cities found.
+                      </div>
                     ) : (
-                      cities.map(c => (
-                        <div key={c.id} className="p-4 flex justify-between items-center hover:bg-slate-50/40">
+                      cities.map((c) => (
+                        <div
+                          key={c.id}
+                          className="p-4 flex justify-between items-center hover:bg-slate-50/40"
+                        >
                           <div>
-                            <div className="text-sm font-semibold text-ink font-display">{c.name}</div>
+                            <div className="text-sm font-semibold text-ink font-display">
+                              {c.name}
+                            </div>
                           </div>
-                          <span className="text-[10px] text-ink/35 font-medium font-sans">Identifier ID: #{c.id}</span>
+                          <span className="text-[10px] text-ink/35 font-medium font-sans">
+                            Identifier ID: #{c.id}
+                          </span>
                         </div>
                       ))
                     )}
@@ -1097,7 +1490,6 @@ export default function AdminDashboardPage() {
                 </Card>
               </div>
             )}
-
           </>
         )}
       </div>

@@ -22,3 +22,14 @@ export function formatDate(date: Date): string {
     year: "numeric",
   });
 }
+
+export function formatDateTime(dateStr?: string | Date): string {
+  if (!dateStr) return "-";
+  const date = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}

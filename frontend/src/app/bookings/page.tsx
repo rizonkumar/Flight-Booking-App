@@ -6,6 +6,7 @@ import { Plane, Search } from "lucide-react";
 import Link from "next/link";
 import { BookingCard } from "@/components/booking-card";
 import type { Booking } from "@/lib/types";
+import { LoadingScreen } from "@/components/loading-screen";
 
 export default function BookingsPage() {
   const router = useRouter();
@@ -13,24 +14,29 @@ export default function BookingsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("skyroute_token");
-    if (!token) {
-      router.push("/");
-      return;
-    }
+    const checkAuth = () => {
+      const token = localStorage.getItem("skyroute_token");
+      if (!token) {
+        router.push("/");
+      }
+    };
+
+    checkAuth();
+
     const stored = localStorage.getItem("skyroute_bookings");
     if (stored) {
       setBookings(JSON.parse(stored));
     }
     setLoading(false);
+
+    window.addEventListener("skyroute-auth-change", checkAuth);
+    return () => {
+      window.removeEventListener("skyroute-auth-change", checkAuth);
+    };
   }, [router]);
 
   if (loading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Plane className="h-8 w-8 animate-spin text-forest" />
-      </div>
-    );
+    return <LoadingScreen variant="plane" minHeight="min-h-[60vh]" />;
   }
 
   return (

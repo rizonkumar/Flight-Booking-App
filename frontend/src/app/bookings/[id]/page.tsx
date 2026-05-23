@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { makePayment, cancelBooking, downloadTicket, getFlight } from "@/lib/api";
 import type { Booking, Flight, CancelBookingResponse } from "@/lib/types";
 import { formatTime, formatDate } from "@/lib/format";
+import { LoadingScreen } from "@/components/loading-screen";
 
 const statusStyles: Record<string, string> = {
   initiated: "bg-ink/5 text-ink/60 border-ink/10",
@@ -72,6 +73,20 @@ export default function BookingDetailPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem("skyroute_token");
+      if (!token) {
+        router.push("/");
+      }
+    };
+    
+    window.addEventListener("skyroute-auth-change", checkAuth);
+    return () => {
+      window.removeEventListener("skyroute-auth-change", checkAuth);
+    };
+  }, [router]);
 
   async function handlePayment() {
     if (!booking) return;
@@ -155,11 +170,7 @@ export default function BookingDetailPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-forest" />
-      </div>
-    );
+    return <LoadingScreen variant="loader" minHeight="min-h-[60vh]" />;
   }
 
   if (!booking) {
