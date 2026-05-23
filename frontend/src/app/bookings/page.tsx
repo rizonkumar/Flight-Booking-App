@@ -13,16 +13,25 @@ export default function BookingsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("skyroute_token");
-    if (!token) {
-      router.push("/");
-      return;
-    }
+    const checkAuth = () => {
+      const token = localStorage.getItem("skyroute_token");
+      if (!token) {
+        router.push("/");
+      }
+    };
+
+    checkAuth();
+
     const stored = localStorage.getItem("skyroute_bookings");
     if (stored) {
       setBookings(JSON.parse(stored));
     }
     setLoading(false);
+
+    window.addEventListener("skyroute-auth-change", checkAuth);
+    return () => {
+      window.removeEventListener("skyroute-auth-change", checkAuth);
+    };
   }, [router]);
 
   if (loading) {

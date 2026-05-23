@@ -73,6 +73,20 @@ export default function BookingDetailPage() {
     loadData();
   }, [loadData]);
 
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem("skyroute_token");
+      if (!token) {
+        router.push("/");
+      }
+    };
+    
+    window.addEventListener("skyroute-auth-change", checkAuth);
+    return () => {
+      window.removeEventListener("skyroute-auth-change", checkAuth);
+    };
+  }, [router]);
+
   async function handlePayment() {
     if (!booking) return;
     setPaying(true);

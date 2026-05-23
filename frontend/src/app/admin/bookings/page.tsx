@@ -38,6 +38,8 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { LoadingScreen } from "@/components/loading-screen";
+import { formatDateTime } from "@/lib/format";
 import {
   Card,
   CardHeader,
@@ -139,6 +141,28 @@ export default function AdminDashboardPage() {
   };
 
   useEffect(() => {
+    const checkAuth = () => {
+      if (typeof window !== "undefined") {
+        const userStr = localStorage.getItem("skyroute_user");
+        const token = localStorage.getItem("skyroute_token");
+        if (userStr && token) {
+          try {
+            const user = JSON.parse(userStr);
+            if (user.role === "admin") {
+              setAuthorized(true);
+              return;
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        setAuthorized(false);
+        router.push("/");
+      }
+    };
+
+    checkAuth();
+
     if (typeof window !== "undefined") {
       const userStr = localStorage.getItem("skyroute_user");
       const token = localStorage.getItem("skyroute_token");
@@ -146,16 +170,16 @@ export default function AdminDashboardPage() {
         try {
           const user = JSON.parse(userStr);
           if (user.role === "admin") {
-            setAuthorized(true);
             fetchData();
-            return;
           }
-        } catch (e) {
-          console.error(e);
-        }
+        } catch (e) {}
       }
-      router.push("/");
     }
+
+    window.addEventListener("skyroute-auth-change", checkAuth);
+    return () => {
+      window.removeEventListener("skyroute-auth-change", checkAuth);
+    };
   }, [router]);
 
   useEffect(() => {
@@ -411,22 +435,8 @@ export default function AdminDashboardPage() {
     return statusMatch && searchMatch;
   });
 
-  const formatDateTime = (dateStr?: string) => {
-    if (!dateStr) return "-";
-    return new Date(dateStr).toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   if (!authorized) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <RefreshCw className="h-8 w-8 text-forest animate-spin" />
-      </div>
-    );
+    return <LoadingScreen variant="spinner" minHeight="min-h-screen" />;
   }
 
   return (
@@ -457,12 +467,12 @@ export default function AdminDashboardPage() {
         </div>
 
         {loading && bookings.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 bg-white border border-border rounded-2xl shadow-sm">
-            <RefreshCw className="h-8 w-8 text-forest animate-spin mb-4" />
-            <p className="text-ink/60 font-medium text-sm">
-              Initializing system datasets...
-            </p>
-          </div>
+          <LoadingScreen
+            variant="spinner"
+            minHeight="py-20"
+            className="bg-white border border-border rounded-2xl shadow-sm"
+            message="Initializing system datasets..."
+          />
         ) : error ? (
           <div className="p-6 bg-red-50 border border-red-200 text-red-700 rounded-2xl mb-8 flex items-start gap-3">
             <XCircle className="h-5 w-5 shrink-0 mt-0.5" />

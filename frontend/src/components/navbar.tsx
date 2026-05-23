@@ -35,10 +35,30 @@ export function Navbar() {
   ];
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("skyroute_user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    const handleAuthChange = () => {
+      const storedUser = localStorage.getItem("skyroute_user");
+      setUser(storedUser ? JSON.parse(storedUser) : null);
+    };
+
+    handleAuthChange();
+
+    window.addEventListener("skyroute-auth-change", handleAuthChange);
+    return () => {
+      window.removeEventListener("skyroute-auth-change", handleAuthChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      setAuthMode("signin");
+      setError("Your session has expired. Please sign in again to continue.");
+      setModalOpen(true);
+    };
+
+    window.addEventListener("skyroute-session-expired", handleSessionExpired);
+    return () => {
+      window.removeEventListener("skyroute-session-expired", handleSessionExpired);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -47,6 +67,7 @@ export function Navbar() {
     localStorage.removeItem("skyroute_bookings");
     setUser(null);
     setMobileOpen(false);
+    window.dispatchEvent(new Event("skyroute-auth-change"));
     router.push("/");
   };
 
@@ -63,6 +84,7 @@ export function Navbar() {
         setUser(res.user);
         setModalOpen(false);
         resetForm();
+        window.dispatchEvent(new Event("skyroute-auth-change"));
       } else {
         const res = await signup({ email, password, firstName, lastName });
         localStorage.setItem("skyroute_token", res.tokens.accessToken);
@@ -70,6 +92,7 @@ export function Navbar() {
         setUser(res.user);
         setModalOpen(false);
         resetForm();
+        window.dispatchEvent(new Event("skyroute-auth-change"));
       }
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {

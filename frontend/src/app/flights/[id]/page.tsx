@@ -59,15 +59,15 @@ function FlightDetailContent() {
   }, [params.id]);
 
   useEffect(() => {
-    const handleStorageChange = () => {
+    const handleAuthChange = () => {
       const stored = localStorage.getItem("skyroute_user");
       setCurrentUser(stored ? JSON.parse(stored) : null);
     };
-    window.addEventListener("storage", handleStorageChange);
-    const interval = setInterval(handleStorageChange, 1000);
+    window.addEventListener("storage", handleAuthChange);
+    window.addEventListener("skyroute-auth-change", handleAuthChange);
     return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      clearInterval(interval);
+      window.removeEventListener("storage", handleAuthChange);
+      window.removeEventListener("skyroute-auth-change", handleAuthChange);
     };
   }, []);
 
