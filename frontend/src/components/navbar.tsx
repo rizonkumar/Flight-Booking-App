@@ -61,6 +61,19 @@ export function Navbar() {
     };
   }, []);
 
+  useEffect(() => {
+    const handleTriggerSignin = () => {
+      setAuthMode("signin");
+      setError("");
+      setModalOpen(true);
+    };
+
+    window.addEventListener("skyroute-trigger-signin", handleTriggerSignin);
+    return () => {
+      window.removeEventListener("skyroute-trigger-signin", handleTriggerSignin);
+    };
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem("skyroute_token");
     localStorage.removeItem("skyroute_user");
