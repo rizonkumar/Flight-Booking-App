@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { getFlight, createBooking } from "@/lib/api";
 import type { Flight, User } from "@/lib/types";
 import { formatTime, formatDuration, formatDate } from "@/lib/format";
+import { LoadingScreen } from "@/components/loading-screen";
 
 function FlightDetailContent() {
   const params = useParams();
@@ -100,11 +101,7 @@ function FlightDetailContent() {
   }
 
   if (loading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-forest" />
-      </div>
-    );
+    return <LoadingScreen variant="loader" minHeight="min-h-[60vh]" />;
   }
 
   if (error || !flight) {
@@ -327,11 +324,7 @@ function FlightDetailContent() {
 
 export default function FlightDetailPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-forest" />
-      </div>
-    }>
+    <Suspense fallback={<LoadingScreen variant="loader" minHeight="min-h-[60vh]" />}>
       <FlightDetailContent />
     </Suspense>
   );
